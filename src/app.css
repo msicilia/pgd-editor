@@ -309,3 +309,31 @@ button.borrar:hover:not(:disabled){border-color:var(--alerta); color:var(--alert
 .zona-borrar{display:flex; align-items:center; gap:14px; flex-wrap:wrap;
   margin-top:30px; padding-top:18px; border-top:1px solid var(--line)}
 .zona-borrar .menor{flex:1; min-width:220px; margin:0}
+
+/* ---------- ayuda desplegable por campo ---------- */
+.campo-cab{display:flex; align-items:center; gap:7px}
+.campo-cab label{flex:1; min-width:0}
+button.ayuda-b{
+  flex:none; width:19px; height:19px; padding:0; border-radius:50%;
+  border:1px solid var(--line-2); background:var(--surface);
+  color:var(--ink-3); font-size:11.5px; font-weight:700; line-height:1;
+  display:flex; align-items:center; justify-content:center;
+}
+button.ayuda-b:hover:not(:disabled){border-color:var(--accent); color:var(--accent-ink);
+  background:var(--accent-soft)}
+button.ayuda-b.activa{background:var(--accent); border-color:var(--accent); color:#fff}
+.campo > .ayuda{
+  margin:0; font-size:12.5px; line-height:1.5; color:var(--ink-2);
+  background:var(--surface-2); border-left:2px solid var(--accent);
+  border-radius:0 6px 6px 0; padding:8px 11px;
+}
+
+/* ---------- versión al exportar ---------- */
+.version-caja{margin:0 0 18px; padding:13px 15px; border:1px solid var(--line);
+  border-radius:9px; background:var(--surface)}
+.version-caja .et{font-size:11px; font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--ink-3); margin:0 0 9px}
+.version-caja .menor{margin:10px 0 0}
+.version-actual{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:15px;
+  font-weight:500; color:var(--accent-ink); background:var(--accent-soft);
+  border-radius:6px; padding:6px 11px; align-self:center}

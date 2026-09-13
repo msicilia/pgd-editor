@@ -358,12 +358,13 @@
 
   /* Un campo declarado en TEMAS, sobre el objeto que sea. */
   function campoTema(f, obj, alCambiar) {
+    var o = { ayuda: f.ayuda, ejemplo: f.ejemplo, clave: f.k };
     if (f.tipo === 'select') {
-      return selectLibre(f.et, obj[f.k], Modelo[f.opciones], f.ayuda, function (v) {
+      return selectLibre(f.et, obj[f.k], Modelo[f.opciones], o, function (v) {
         obj[f.k] = v; alCambiar();
       });
     }
-    return campoLibre(f.et, f.tipo, obj[f.k], f.ayuda, function (v) {
+    return campoLibre(f.et, f.tipo, obj[f.k], o, function (v) {
       obj[f.k] = v; alCambiar();
     });
   }
@@ -528,20 +529,18 @@
     cab.appendChild(borrar);
     caja.appendChild(cab);
 
-    caja.appendChild(campoLibre('Nombre del conjunto', 'text', c.title,
-      'Cuaderno de recogida, extracción de historia clínica, base de análisis…',
+    caja.appendChild(campoLibre('Título del conjunto', 'text', c.title,
+      { ejemplo: 'Cuaderno de recogida electrónico' },
       function (v) { c.title = v; cambiado(); }));
-    caja.appendChild(campoLibre('Qué contiene', 'textarea', c.description,
-      'Qué hay dentro y de dónde sale, nombrando las variables o los grupos de variables. «Datos clínicos» no describe nada.',
+    caja.appendChild(campoLibre('Descripción y contenido', 'textarea', c.description,
+      { ejemplo: 'Qué hay dentro y de dónde sale, nombrando las variables o los grupos de variables.' },
       function (v) { c.description = v; cambiado(); }));
 
     var d = el('div', 'campos dos');
     d.style.marginTop = '13px';
-    d.appendChild(selectLibre('¿Contiene datos de personas?', c.personal_data, Modelo.TRES,
-      'Si hay duda, la respuesta es que sí.',
+    d.appendChild(selectLibre('¿Contiene datos personales?', c.personal_data, Modelo.TRES, null,
       function (v) { c.personal_data = v; cambiado(); }));
-    d.appendChild(selectLibre('¿Son de categoría especial?', c.sensitive_data, Modelo.TRES,
-      'Los de salud lo son. También los genéticos y los biométricos.',
+    d.appendChild(selectLibre('¿De categoría especial?', c.sensitive_data, Modelo.TRES, null,
       function (v) { c.sensitive_data = v; cambiado(); }));
     caja.appendChild(d);
 
@@ -625,40 +624,51 @@
     cuerpo.appendChild(pista(n.pista));
 
     if (n.id === 1) {
-      cuerpo.appendChild(campoLibre('Nombre del conjunto', 'text', c.title,
-        'Cuaderno de recogida, extracción de historia clínica, base de análisis…',
+      cuerpo.appendChild(campoLibre('Título del conjunto', 'text', c.title,
+        { ejemplo: 'Cuaderno de recogida electrónico',
+          ayuda: 'Un nombre reconocible por el equipo. Se acompañará del identificador ' + c.dataset_id.identifier + ', que es como se citará el conjunto en el resto del documento.' },
         function (v) { c.title = v; cambiado(); }));
-      cuerpo.appendChild(campoLibre('Qué contiene', 'textarea', c.description,
-        'Qué hay dentro y de dónde sale, nombrando las variables o los grupos de variables.',
+      cuerpo.appendChild(campoLibre('Descripción y contenido', 'textarea', c.description,
+        { ejemplo: 'Variables clínicas y desenlaces recogidos en cada visita: demográficas, antecedentes, función renal y tratamiento concomitante.',
+          ayuda: 'Que alguien ajeno al proyecto entienda qué hay dentro y pueda juzgar si le sirve. Se nombran las variables o los grupos de variables: «datos clínicos» no describe nada. El error frecuente es describir el proyecto en vez del conjunto.' },
         function (v) { c.description = v; cambiado(); }));
       var d1 = el('div', 'campos dos'); d1.style.marginTop = '13px';
-      d1.appendChild(selectLibre('¿Contiene datos de personas?', c.personal_data, Modelo.TRES,
-        'Si hay duda, la respuesta es que sí.',
+      d1.appendChild(selectLibre('¿Contiene datos personales?', c.personal_data, Modelo.TRES,
+        { clave: 'personal_data',
+          ayuda: 'Cualquier información sobre una persona identificada o identificable. Si existe duda, la respuesta es que sí: la clasificación puede revisarse después, pero tratar como no personal algo que lo es compromete todo lo que el plan decida a continuación.' },
         function (v) { c.personal_data = v; cambiado(); }));
-      d1.appendChild(selectLibre('¿Son de categoría especial?', c.sensitive_data, Modelo.TRES,
-        'Los de salud lo son.',
+      d1.appendChild(selectLibre('¿De categoría especial?', c.sensitive_data, Modelo.TRES,
+        { clave: 'sensitive_data',
+          ayuda: 'Los datos de salud lo son, y también los genéticos y los biométricos. Su tratamiento está prohibido con carácter general salvo que concurra una excepción del artículo 9 del RGPD, de modo que necesitan dos habilitaciones a la vez y no una.' },
         function (v) { c.sensitive_data = v; cambiado(); }));
       cuerpo.appendChild(d1);
     }
 
     if (n.id === 2) {
       cuerpo.appendChild(selectLibre('Origen', c.x_origen, Modelo.ORIGEN,
-        'Un dato preexistente arrastra su propio circuito de autorizaciones, y son gestiones de meses.',
+        { clave: 'x_origen',
+          ayuda: 'Determina casi todo lo demás. Un dato preexistente de origen asistencial no se puede usar sin una habilitación propia, y su obtención sigue el circuito de autorización y extracción que tenga establecido la institución, con sus plazos.' },
         function (v) { c.x_origen = v; cambiado(); }));
-      cuerpo.appendChild(campoLibre('Sistema de origen', 'text', c.x_sistema,
-        'El nombre del sistema concreto donde se genera o del que se extrae.',
+      cuerpo.appendChild(campoLibre('Sistema de recogida u origen', 'text', c.x_sistema,
+        { ejemplo: 'Plataforma institucional de captura de datos',
+          ayuda: 'El nombre del sistema concreto donde se genera el dato o del que se extrae. Es lo que permite comprobar la extracción y volver a pedirla si hiciera falta.' },
         function (v) { c.x_sistema = v; cambiado(); }));
       var d2 = el('div', 'campos dos'); d2.style.marginTop = '13px';
-      d2.appendChild(campoLibre('Formato', 'text', c.x_formato, 'CSV, DICOM, VCF…',
+      d2.appendChild(campoLibre('Formato', 'text', c.x_formato,
+        { ejemplo: 'CSV', clave: 'x_formato',
+          ayuda: 'El formato de los ficheros tal como salen del sistema de origen, no el que se desearía tener.' },
         function (v) { c.x_formato = v; cambiado(); }));
-      d2.appendChild(campoLibre('Volumen estimado', 'text', c.x_volumen, '300 sujetos · unos 120 GB',
+      d2.appendChild(campoLibre('Volumen estimado', 'text', c.x_volumen,
+        { ejemplo: '300 sujetos · 3 MB', clave: 'x_volumen',
+          ayuda: 'Número de sujetos y de registros, y tamaño aproximado. Es lo que hace creíble —o no— la partida de almacenamiento del apartado 10.' },
         function (v) { c.x_volumen = v; cambiado(); }));
       cuerpo.appendChild(d2);
     }
 
     if (n.id === 3) {
       cuerpo.appendChild(selectLibre('Nivel de identificabilidad', c.x_identificabilidad, Modelo.IDENTIFICABILIDAD,
-        'Quitar el nombre no anonimiza: seudonimiza. Mientras exista la clave en algún sitio, siguen siendo datos personales.',
+        { clave: 'x_identificabilidad',
+          ayuda: 'Retirar el nombre y el número de historia no anonimiza: seudonimiza. Mientras exista en algún lugar la correspondencia que permite volver a la persona, el conjunto sigue siendo dato personal y le aplica toda la normativa. La única frontera con consecuencias jurídicas está entre seudonimizado y anonimizado.' },
         function (v) { c.x_identificabilidad = v; cambiado(true); }));
 
       if (c.x_identificabilidad === 'no-personal') {
@@ -671,28 +681,39 @@
       }
 
       cuerpo.appendChild(campoLibre('Identificabilidad intrínseca', 'textarea', c.x_intrinseca,
-        'Genómica, imagen craneal, series muy pequeñas, enfermedades raras o fechas exactas. Si la hay, el destino queda decidido desde el principio. Si no, se escribe que no.',
+        { ejemplo: 'No la hay. Las fechas de ingreso se sustituyen por el número de días desde la inclusión.',
+          clave: 'x_intrinseca',
+          ayuda: 'Hay datos que identifican aunque se les retiren todas las etiquetas, porque la información en sí misma señala a una persona: secuencias genómicas, imagen craneal con reconstrucción facial posible, series de pocos casos, enfermedades poco frecuentes, fechas exactas y localización fina. No se corrige suprimiendo columnas. Si concurre, el destino del conjunto queda condicionado desde el principio; si no concurre, conviene hacerlo constar igualmente.' },
         function (v) { c.x_intrinseca = v; cambiado(); }));
-      cuerpo.appendChild(campoLibre('Quién custodia la clave', 'textarea', c.x_seudonimizacion,
-        'Cómo se genera el código, quién guarda la correspondencia, dónde vive y en qué supuestos se puede deshacer. Es la primera pregunta de cualquier comité.',
+      cuerpo.appendChild(campoLibre('Seudonimización y custodia de la clave', 'textarea', c.x_seudonimizacion,
+        { ejemplo: 'Código secuencial generado por el servicio de informática en el momento de la extracción. La tabla de correspondencia reside en un sistema separado bajo su custodia; el equipo investigador no tiene acceso a ella.',
+          clave: 'x_seudonimizacion',
+          ayuda: 'Cuatro elementos: cómo se genera el código, quién custodia la correspondencia, dónde reside y en qué supuestos previstos puede levantarse. Que un conjunto esté seudonimizado no es una propiedad del fichero, sino del conjunto formado por el fichero y quien puede deshacer la correspondencia. Es la primera cuestión que plantea un comité de ética, y el campo que con más frecuencia aparece vacío.' },
         function (v) { c.x_seudonimizacion = v; cambiado(); }));
     }
 
     if (n.id === 4) {
       cuerpo.appendChild(campoLibre('Persona responsable', 'text', c.x_responsable,
-        'Un nombre. No un servicio, no un departamento, no «el equipo investigador».',
+        { ejemplo: 'Nombre y apellidos', clave: 'x_responsable',
+          ayuda: 'Una persona concreta. No un servicio, no un departamento, no «el equipo investigador»: una tarea asignada a todos es una tarea de nadie, y eso se descubre cuando algo no se ha hecho y cada uno da por supuesto que correspondía a otro.' },
         function (v) { c.x_responsable = v; cambiado(); }));
       cuerpo.appendChild(campoLibre('Palabras clave', 'text', (c.keyword || []).join(', '),
-        'Tres o cuatro términos por los que alguien buscaría estos datos, separados por comas.',
+        { ejemplo: 'enfermedad renal crónica, cohorte prospectiva, filtrado glomerular',
+          clave: 'keyword',
+          ayuda: 'Tres o cuatro términos por los que alguien buscaría este conjunto en un catálogo sin haber oído hablar del proyecto, separados por comas. Decidirlos ahora cuesta un minuto; improvisarlos el día del depósito es lo que produce conjuntos depositados e invisibles.' },
         function (v) {
           c.keyword = v.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
           cambiado();
         }));
       cuerpo.appendChild(campoLibre('Aseguramiento de la calidad', 'textarea', c.data_quality_assurance,
-        'Validaciones en la recogida, doble entrada, monitorización, controles de rango. Es de los pocos sitios donde el plan habla de la calidad del dato y no solo de su custodia.',
+        { ejemplo: 'Validación de rangos en el cuaderno de recogida y revisión mensual de valores imposibles.',
+          clave: 'data_quality_assurance',
+          ayuda: 'Qué se hace para que los datos sean correctos: validaciones en la recogida, doble entrada, monitorización, controles de rango. Es de los pocos lugares donde el plan trata de la calidad del dato y no solo de su custodia, y es campo propio del estándar RDA.' },
         function (v) { c.data_quality_assurance = v; cambiado(); }));
       cuerpo.appendChild(campoLibre('Utilidad fuera del proyecto', 'textarea', c.x_utilidad,
-        'A quién podrían servirle estos datos y para qué. Es lo que justifica el esfuerzo de compartir.',
+        { ejemplo: 'Validación externa de modelos de progresión renal y metaanálisis de cohortes comparables.',
+          clave: 'x_utilidad',
+          ayuda: 'A qué otros equipos podría servirles este conjunto y para qué. Horizon Europe lo pregunta expresamente, y es lo que justifica el esfuerzo de describir y compartir.' },
         function (v) { c.x_utilidad = v; cambiado(); }));
     }
 
@@ -738,12 +759,44 @@
     acc.appendChild(el('h3', null, 'Exportar'));
     acc.appendChild(el('p', 'menor', 'El PDF que sale es un documento normal y lleva el plan dentro. Para seguir otro día basta con arrastrarlo sobre esta ventana.'));
 
+    /* La versión es una decisión de quien exporta, así que se toma
+       aquí y no al guardar. La regla del curso: si el cambio obliga a
+       avisar a alguien, sube el primer número; si no, el segundo. */
+    var ver = el('div', 'version-caja');
+    ver.appendChild(el('p', 'et', 'Versión que se va a exportar'));
+    var fv = el('div', 'fila-botones');
+    fv.appendChild(el('span', 'version-actual', 'v' + doc.x_pgd.version));
+    var bmen = el('button', null, '→ v' + Modelo.subirVersion(doc.x_pgd.version, false));
+    bmen.type = 'button';
+    bmen.title = 'Se ha rellenado un hueco o precisado una cifra, pero ninguna decisión cambia';
+    bmen.addEventListener('click', function () {
+      doc.x_pgd.version = Modelo.subirVersion(doc.x_pgd.version, false);
+      doc.x_pgd.fecha_version = Modelo.hoy();
+      cambiado(true);
+    });
+    fv.appendChild(bmen);
+    var bmay = el('button', null, '→ v' + Modelo.subirVersion(doc.x_pgd.version, true));
+    bmay.type = 'button';
+    bmay.title = 'Cambia una decisión ya comunicada: hay que avisar al comité, al financiador o a los socios';
+    bmay.addEventListener('click', function () {
+      doc.x_pgd.version = Modelo.subirVersion(doc.x_pgd.version, true);
+      doc.x_pgd.fecha_version = Modelo.hoy();
+      cambiado(true);
+    });
+    fv.appendChild(bmay);
+    ver.appendChild(fv);
+    ver.appendChild(el('p', 'menor', 'Si el cambio obliga a avisar a alguien —al comité, al financiador, a los socios— sube el primer número. Si no, el segundo.'));
+    acc.appendChild(ver);
+
     var fila = el('div', 'fila-botones');
-    var bp = el('button', 'principal', 'Exportar a PDF');
-    bp.type = 'button';
-    bp.id = 'exportar-pdf';
-    bp.addEventListener('click', exportarPDF);
-    fila.appendChild(bp);
+    Object.keys(PDF.DISPOSICIONES).forEach(function (k, i) {
+      var b = el('button', i === 0 ? 'principal' : null,
+        'PDF · ' + PDF.DISPOSICIONES[k].nombre.replace('Formato ', '').replace('del curso', 'del curso').replace('de la Comisión Europea', 'Comisión Europea'));
+      b.type = 'button';
+      b.dataset.formato = k;
+      b.addEventListener('click', function () { exportarPDF(k, b); });
+      fila.appendChild(b);
+    });
 
     var bj = el('button', null, 'Guardar como JSON (RDA)');
     bj.type = 'button';
@@ -797,23 +850,58 @@
     return d;
   }
 
-  function base(etiqueta, ayuda) {
+  /* La ayuda no puede vivir en el marcador de posición: desaparece en
+     cuanto se escribe la primera letra, que es justo cuando hace falta.
+     Va en un botón que la despliega debajo del campo y la deja fija.
+
+     El marcador de posición queda para lo que sirve de verdad: un
+     ejemplo corto de qué se espera, no una explicación. */
+  var ayudasAbiertas = {};
+  var todasLasAyudas = false;
+
+  function base(etiqueta, ayuda, clave) {
     var d = el('div', 'campo');
     var id = 'c' + Math.random().toString(36).slice(2, 9);
+    var fila = el('div', 'campo-cab');
     var l = el('label', null, etiqueta);
     l.htmlFor = id;
-    d.appendChild(l);
-    d._id = id; d._ayuda = ayuda;
+    fila.appendChild(l);
+    if (ayuda) {
+      var k = clave || etiqueta;
+      var abierta = todasLasAyudas || !!ayudasAbiertas[k];
+      var b = el('button', 'ayuda-b' + (abierta ? ' activa' : ''), '?');
+      b.type = 'button';
+      b.setAttribute('aria-expanded', abierta ? 'true' : 'false');
+      b.setAttribute('aria-controls', id + '-ayuda');
+      b.setAttribute('aria-label', 'Explicación de «' + etiqueta + '»');
+      b.title = abierta ? 'Ocultar la explicación' : 'Qué se espera en este campo';
+      b.addEventListener('click', function () {
+        ayudasAbiertas[k] = !(todasLasAyudas || ayudasAbiertas[k]);
+        if (todasLasAyudas && !ayudasAbiertas[k]) { ayudasAbiertas[k] = false; }
+        pintarPanel();
+      });
+      fila.appendChild(b);
+      d._ayudaTexto = ayuda; d._ayudaAbierta = abierta;
+    }
+    d.appendChild(fila);
+    d._id = id;
     return d;
   }
-  function conAyuda(d, ayuda) {
-    if (ayuda) { d.appendChild(el('span', 'ayuda', ayuda)); }
+
+  function conAyuda(d) {
+    if (d._ayudaTexto && d._ayudaAbierta) {
+      var a = el('p', 'ayuda', d._ayudaTexto);
+      a.id = d._id + '-ayuda';
+      d.appendChild(a);
+      var campo = d.querySelector('input, textarea, select');
+      if (campo) { campo.setAttribute('aria-describedby', a.id); }
+    }
     return d;
   }
 
   /* enlazados al documento por ruta */
   function campoTexto(etiqueta, ruta, marcador, grande, ayuda) {
-    var d = base(etiqueta);
+    var d = base(etiqueta, ayuda);
     var i = el('input');
     i.type = 'text'; i.id = d._id;
     i.value = leer(doc, ruta) || '';
@@ -821,7 +909,7 @@
     if (grande) { i.className = 'grande'; }
     i.addEventListener('input', function () { escribir(doc, ruta, i.value); cambiado(); });
     d.appendChild(i);
-    return conAyuda(d, ayuda);
+    return conAyuda(d);
   }
   function campoFecha(etiqueta, ruta) {
     var d = base(etiqueta);
@@ -859,30 +947,32 @@
   }
 
   /* con retrollamada, para los campos de un conjunto */
-  function campoLibre(etiqueta, tipo, valor, ayuda, alCambiar) {
-    var d = base(etiqueta);
+  function campoLibre(etiqueta, tipo, valor, o, alCambiar) {
+    o = typeof o === 'string' ? { ayuda: o } : (o || {});
+    var d = base(etiqueta, o.ayuda, o.clave);
     var e = el(tipo === 'textarea' ? 'textarea' : 'input');
     if (tipo === 'textarea') { e.rows = 3; } else { e.type = 'text'; }
     e.id = d._id;
     e.value = valor || '';
-    if (ayuda) { e.placeholder = ayuda; }
+    if (o.ejemplo) { e.placeholder = o.ejemplo; }
     e.addEventListener('input', function () { alCambiar(e.value); });
     d.appendChild(e);
-    return d;
+    return conAyuda(d);
   }
-  function selectLibre(etiqueta, valor, opciones, ayuda, alCambiar) {
-    var d = base(etiqueta);
+  function selectLibre(etiqueta, valor, opciones, o, alCambiar) {
+    o = typeof o === 'string' ? { ayuda: o } : (o || {});
+    var d = base(etiqueta, o.ayuda, o.clave);
     var s = el('select');
     s.id = d._id;
-    opciones.forEach(function (o) {
-      var op = el('option', null, o.t);
-      op.value = o.v;
-      if (o.v === valor) { op.selected = true; }
+    opciones.forEach(function (op2) {
+      var op = el('option', null, op2.t);
+      op.value = op2.v;
+      if (op2.v === valor) { op.selected = true; }
       s.appendChild(op);
     });
     s.addEventListener('change', function () { alCambiar(s.value); });
     d.appendChild(s);
-    return conAyuda(d, ayuda);
+    return conAyuda(d);
   }
 
   /* ================= ficheros y mensajes ============================= */
@@ -906,27 +996,29 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
   }
 
-  function nombreFichero(ext) {
+  function nombreFichero(ext, formato) {
     var b = (doc.dmp.title || 'plan-gestion-datos').toLowerCase()
-      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'plan';
-    return b + '_v' + (doc.x_pgd.version || '1.0') + '_' +
+    return b + (formato === 'ec' ? '_EC' : '') +
+      '_v' + (doc.x_pgd.version || '1.0') + '_' +
       (doc.x_pgd.fecha_version || Modelo.hoy()) + '.' + ext;
   }
 
-  async function exportarPDF() {
-    var b = $('#exportar-pdf');
+  async function exportarPDF(formato, b) {
+    var rotulo = b ? b.textContent : '';
     if (b) { b.disabled = true; b.textContent = 'Generando…'; }
     try {
       doc.x_pgd.fecha_version = doc.x_pgd.fecha_version || Modelo.hoy();
-      var bytes = await PDF.exportar(doc);
-      descargar(bytes, nombreFichero('pdf'), 'application/pdf');
-      decir('PDF generado. Lleva el plan dentro: para seguir otro día, arrástrelo sobre esta ventana.');
+      var bytes = await PDF.exportar(doc, { formato: formato });
+      descargar(bytes, nombreFichero('pdf', formato), 'application/pdf');
+      decir('PDF generado en ' + PDF.DISPOSICIONES[formato].nombre.toLowerCase() +
+            '. Lleva el plan dentro: para seguir otro día, arrástrelo sobre esta ventana.');
     } catch (e) {
       console.error(e);
       decir('No se ha podido generar el PDF: ' + (e.message || e), true);
     } finally {
-      if (b) { b.disabled = false; b.textContent = 'Exportar a PDF'; }
+      if (b) { b.disabled = false; b.textContent = rotulo; }
     }
   }
 
