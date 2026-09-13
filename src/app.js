@@ -21,7 +21,7 @@
 
   var doc = null;
   var vista = { seccion: 'portada', conjunto: null };
-  var niveles = { 1: true, 2: false, 3: false, 4: false };
+  var niveles = { 1: true, 2: false, 3: false, 4: false, 5: false };
   var temporizador = null;
 
   var $ = function (s) { return document.querySelector(s); };
@@ -444,7 +444,7 @@
     var cab = el('button', 'nivel-cab');
     cab.type = 'button';
     cab.setAttribute('aria-expanded', abierto ? 'true' : 'false');
-    cab.appendChild(el('span', 'flecha', abierto ? '▾' : '▸'));
+    cab.appendChild(el('span', 'flecha'));
     cab.appendChild(el('span', 'cod', id));
     cab.appendChild(el('span', 'nivel-t', c.title || 'sin nombre'));
     cab.appendChild(el('span', 'nivel-estado' + (hechos === t.conjunto.length ? ' completo' : ''),
@@ -610,6 +610,9 @@
     mas.addEventListener('click', anadirConjunto);
     p.appendChild(mas);
 
+    var esq = bloqueEsquema();
+    if (esq) { esq.style.marginTop = '30px'; p.appendChild(esq); }
+
     var a = bloqueAvisos(avisosDe('conjuntos'), 'Qué falta en los conjuntos');
     if (a) { p.appendChild(a); }
   }
@@ -678,7 +681,7 @@
     acc.appendChild(bb);
     cab.appendChild(acc);
     p.appendChild(cab);
-    p.appendChild(pista('La ficha se organiza en cuatro niveles. El primero basta para que el conjunto quede constituido; los demás se despliegan cuando haya información que consignar, y no es necesario completarlos de una sola vez.'));
+    p.appendChild(pista('La ficha se organiza en niveles. El primero basta para que el conjunto quede constituido; los demás se despliegan cuando haya información que consignar, y no es necesario completarlos de una sola vez. El último, la estructura, es opcional y solo tiene sentido en conjuntos tabulares.'));
 
     Modelo.NIVELES.forEach(function (n) {
       p.appendChild(nivelCaja(c, n));
@@ -712,11 +715,19 @@
     var cab = el('button', 'nivel-cab');
     cab.type = 'button';
     cab.setAttribute('aria-expanded', niveles[n.id] ? 'true' : 'false');
-    cab.appendChild(el('span', 'flecha', niveles[n.id] ? '▾' : '▸'));
+    cab.appendChild(el('span', 'flecha'));
     cab.appendChild(el('span', 'nivel-n', String(n.id)));
     cab.appendChild(el('span', 'nivel-t', n.titulo));
-    var marca = el('span', 'nivel-estado' + (estado.hechos === estado.total ? ' completo' : ''),
-      estado.hechos + ' de ' + estado.total);
+    /* La estructura es opcional, y decir «0 de 0» en un nivel que
+       puede quedarse vacío con toda legitimidad solo produce alarma. */
+    var rotulo = estado.hechos + ' de ' + estado.total;
+    if (n.opcional) {
+      rotulo = estado.total
+        ? estado.total + (estado.total === 1 ? ' tabla' : ' tablas')
+        : 'opcional';
+    }
+    var marca = el('span', 'nivel-estado' +
+      (estado.total && estado.hechos === estado.total ? ' completo' : ''), rotulo);
     cab.appendChild(marca);
     cab.addEventListener('click', function () {
       niveles[n.id] = !niveles[n.id];
@@ -824,8 +835,444 @@
         function (v) { c.x_utilidad = v; cambiado(); }));
     }
 
+    if (n.id === 5) { panelEstructura(cuerpo, c); }
+
     caja.appendChild(cuerpo);
     return caja;
+  }
+
+  /* ================= estructura de un conjunto tabular ================
+     Sin editor de diagramas, y es deliberado: colocar cajas con el
+     ratón no añade nada que el plan necesite saber. Se teclea el
+     enlace y el diagrama se dibuja solo. */
+
+  function panelEstructura(cuerpo, c) {
+    if (!Array.isArray(c.x_tablas)) { c.x_tablas = []; }
+    var tablas = c.x_tablas;
+
+    if (!tablas.length) {
+      var v = el('div', 'vacio');
+      v.appendChild(el('p', null, 'Este conjunto todavía no describe su estructura. Es opcional: solo tiene sentido si es tabular y se quiere entrar en ese detalle.'));
+      var fila0 = el('div', 'fila-botones');
+      fila0.style.justifyContent = 'center';
+      var b1 = el('button', null, 'Describir una tabla');
+      b1.type = 'button';
+      b1.addEventListener('click', function () {
+        tablas.push(Modelo.tablaNueva(doc, c.title));
+        cambiado(true);
+      });
+      var b2 = el('button', 'principal', 'Leer la cabecera de un CSV');
+      b2.type = 'button';
+      b2.addEventListener('click', function () { importarCabecera(c, null); });
+      fila0.appendChild(b2); fila0.appendChild(b1);
+      v.appendChild(fila0);
+      cuerpo.appendChild(v);
+      return;
+    }
+
+    tablas.forEach(function (t) { cuerpo.appendChild(cajaTabla(c, t)); });
+
+    var fila = el('div', 'fila-botones');
+    fila.style.marginTop = '10px';
+    var mas = el('button', null, '+  Otra tabla');
+    mas.type = 'button';
+    mas.addEventListener('click', function () {
+      tablas.push(Modelo.tablaNueva(doc, ''));
+      cambiado(true);
+    });
+    fila.appendChild(mas);
+    var csv = el('button', null, 'Leer la cabecera de un CSV');
+    csv.type = 'button';
+    csv.addEventListener('click', function () { importarCabecera(c, null); });
+    fila.appendChild(csv);
+    cuerpo.appendChild(fila);
+  }
+
+  function cajaTabla(c, t) {
+    var caja = el('section', 'tabla-caja');
+
+    var cab = el('div', 'tabla-cab');
+    cab.appendChild(el('span', 'cod', t.id));
+    var nom = el('input', 'tabla-nombre');
+    nom.type = 'text';
+    nom.value = t.nombre || '';
+    nom.placeholder = 'Nombre de la tabla o del fichero';
+    nom.setAttribute('aria-label', 'Nombre de la tabla ' + t.id);
+    nom.addEventListener('input', function () { t.nombre = nom.value; cambiado(); });
+    cab.appendChild(nom);
+    var bq = el('button', 'borrar', 'Quitar');
+    bq.type = 'button';
+    bq.setAttribute('aria-label', 'Quitar la tabla ' + t.id);
+    bq.addEventListener('click', function () {
+      function hazlo() {
+        var i = c.x_tablas.indexOf(t);
+        if (i >= 0) { c.x_tablas.splice(i, 1); }
+        /* y los enlaces que apuntaban a ella dejan de apuntar a nada */
+        doc.dmp.dataset.forEach(function (o) {
+          (o.x_tablas || []).forEach(function (u) {
+            if (u.enlace && u.enlace.con === t.id) { u.enlace.con = ''; }
+          });
+        });
+        cambiado(true);
+      }
+      if (!String(t.grano || '').trim() && !(t.columnas || []).length) { return hazlo(); }
+      confirmar(caja, 'Se quitará la tabla ' + t.id +
+        ((t.columnas || []).length ? ' y sus ' + t.columnas.length + ' columnas' : '') + '.',
+        'Quitar ' + t.id, hazlo);
+    });
+    cab.appendChild(bq);
+    caja.appendChild(cab);
+
+    caja.appendChild(campoLibre('Qué representa una fila', 'text', t.grano,
+      { req: 'obligatorio', clave: 'grano' + t.id,
+        ejemplo: 'Un paciente y una visita',
+        ayuda: 'La frase más útil de todo el apartado, y la que casi nunca está. Sin ella, quien reciba el fichero no sabe si tiene trescientos pacientes o mil doscientas visitas, y cualquier recuento que haga estará mal. Se escribe en singular: «un paciente», «un paciente y una visita», «una determinación».' },
+      function (v) { t.grano = v; cambiado(); }));
+
+    var d = el('div', 'campos dos');
+    d.appendChild(campoLibre('Qué identifica la fila', 'text', t.clave,
+      { req: 'recomendado', clave: 'clave' + t.id, ejemplo: 'id_sujeto + n_visita',
+        ayuda: 'La columna o columnas cuya combinación no se repite. Si no hay ninguna, conviene decirlo: es un dato relevante sobre la calidad del conjunto.' },
+      function (v) { t.clave = v; cambiado(); }));
+    d.appendChild(enlaceTabla(t));
+    caja.appendChild(d);
+
+    caja.appendChild(columnasTabla(c, t));
+    return caja;
+  }
+
+  /* El enlace con otra tabla: un desplegable con las demás tablas del
+     plan y la columna por la que se unen. De aquí salen las flechas. */
+  function enlaceTabla(t) {
+    var otras = Modelo.tablasDelPlan(doc).filter(function (e) { return e.tabla.id !== t.id; });
+    var d = base('Se une con', 'Por qué columna se enlaza con otra tabla, sea de este conjunto o de otro. Es lo único que hace falta para que el diagrama se dibuje solo. En la mayoría de los proyectos todo se une a la tabla de sujetos por el mismo código.',
+      'enlace' + t.id, '');
+    var caja = el('div', 'campos dos');
+
+    var s = el('select');
+    s.id = d._id;
+    var vacia = el('option', null, '— con ninguna —');
+    vacia.value = '';
+    s.appendChild(vacia);
+    otras.forEach(function (e) {
+      var op = el('option', null, e.cod + ' · ' + (e.tabla.nombre || e.tabla.id));
+      op.value = e.tabla.id;
+      if (e.tabla.id === (t.enlace && t.enlace.con)) { op.selected = true; }
+      s.appendChild(op);
+    });
+    s.addEventListener('change', function () {
+      t.enlace = t.enlace || {};
+      t.enlace.con = s.value;
+      cambiado(true);
+    });
+    caja.appendChild(s);
+
+    var i = el('input');
+    i.type = 'text';
+    i.value = (t.enlace && t.enlace.por) || '';
+    i.placeholder = 'por la columna…';
+    i.setAttribute('aria-label', 'Columna por la que se enlaza');
+    i.addEventListener('input', function () {
+      t.enlace = t.enlace || {};
+      t.enlace.por = i.value;
+      cambiado();
+    });
+    caja.appendChild(i);
+
+    d.appendChild(caja);
+    return conAyuda(d);
+  }
+
+  function columnasTabla(c, t) {
+    if (!Array.isArray(t.columnas)) { t.columnas = []; }
+    var caja = el('div', 'columnas-caja');
+
+    var cab = el('div', 'columnas-cab');
+    cab.appendChild(el('h4', null, t.columnas.length
+      ? t.columnas.length + (t.columnas.length === 1 ? ' columna' : ' columnas')
+      : 'Columnas'));
+    cab.appendChild(el('span', 'hueco'));
+    var bc = el('button', 'enlace', 'Leer de un CSV');
+    bc.type = 'button';
+    bc.addEventListener('click', function () { importarCabecera(c, t); });
+    cab.appendChild(bc);
+    var ba = el('button', 'enlace', '+ Añadir');
+    ba.type = 'button';
+    ba.addEventListener('click', function () {
+      t.columnas.push(Modelo.columnaNueva());
+      cambiado(true);
+      var campos = document.querySelectorAll('#panel .columna-fila input');
+      if (campos.length) { campos[campos.length - 3].focus(); }
+    });
+    cab.appendChild(ba);
+    caja.appendChild(cab);
+
+    if (!t.columnas.length) {
+      caja.appendChild(el('p', 'menor', 'Sin columnas declaradas. Enumerarlas es opcional: el diccionario de variables vive fuera del plan, y aquí basta con las que haga falta entender para interpretar el conjunto.'));
+      return caja;
+    }
+
+    var lista = el('div', 'columnas-lista');
+    var enc = el('div', 'columna-fila encabezado');
+    ['Columna', 'Tipo', 'Qué contiene, y en qué unidades o códigos', ''].forEach(function (x) {
+      enc.appendChild(el('span', null, x));
+    });
+    lista.appendChild(enc);
+
+    t.columnas.forEach(function (col, i) {
+      var f = el('div', 'columna-fila');
+
+      var n = el('input');
+      n.type = 'text'; n.value = col.n || ''; n.placeholder = 'nombre';
+      n.setAttribute('aria-label', 'Nombre de la columna ' + (i + 1));
+      n.addEventListener('input', function () { col.n = n.value; cambiado(); });
+      f.appendChild(n);
+
+      var s = el('select');
+      s.setAttribute('aria-label', 'Tipo de la columna ' + (i + 1));
+      Modelo.TIPOS.forEach(function (o) {
+        var op = el('option', null, o.t);
+        op.value = o.v;
+        if (o.v === col.tipo) { op.selected = true; }
+        s.appendChild(op);
+      });
+      s.addEventListener('change', function () { col.tipo = s.value; cambiado(); });
+      f.appendChild(s);
+
+      var de = el('input');
+      de.type = 'text'; de.value = col.d || '';
+      de.placeholder = 'mg/dl · CIE-10 · 0 = no, 1 = sí';
+      de.setAttribute('aria-label', 'Qué contiene la columna ' + (i + 1));
+      de.addEventListener('input', function () { col.d = de.value; cambiado(); });
+      f.appendChild(de);
+
+      var x = el('button', 'quitar-col', '×');
+      x.type = 'button';
+      x.title = 'Quitar esta columna';
+      x.setAttribute('aria-label', 'Quitar la columna ' + (col.n || i + 1));
+      x.addEventListener('click', function () {
+        t.columnas.splice(i, 1);
+        cambiado(true);
+      });
+      f.appendChild(x);
+
+      lista.appendChild(f);
+    });
+    caja.appendChild(lista);
+    return caja;
+  }
+
+  /* --- leer la cabecera de un CSV --------------------------------------
+     Ahorra teclear sesenta nombres a mano, que es lo que hace que este
+     apartado no se rellene nunca. Se lee solo la primera línea y una
+     de muestra para adivinar el tipo: ningún dato entra en el plan ni
+     sale de este ordenador. */
+
+  function separador(linea) {
+    var candidatos = [',', ';', '\t', '|'];
+    var mejor = ',', max = 0;
+    candidatos.forEach(function (s) {
+      var n = partirCSV(linea, s).length;
+      if (n > max) { max = n; mejor = s; }
+    });
+    return mejor;
+  }
+
+  function partirCSV(linea, sep) {
+    var salida = [], actual = '', comillas = false;
+    for (var i = 0; i < linea.length; i++) {
+      var ch = linea[i];
+      if (ch === '"') {
+        if (comillas && linea[i + 1] === '"') { actual += '"'; i++; }
+        else { comillas = !comillas; }
+      } else if (ch === sep && !comillas) {
+        salida.push(actual); actual = '';
+      } else { actual += ch; }
+    }
+    salida.push(actual);
+    return salida;
+  }
+
+  function adivinarTipo(nombre, muestra) {
+    var n = String(nombre || '').toLowerCase();
+    var v = String(muestra == null ? '' : muestra).trim();
+    if (/^(id|cod)|_(id|cod)$|codigo|nhc|identificador/.test(n)) { return 'id'; }
+    if (/fecha|date|f_/.test(n) || /^\d{4}-\d{2}-\d{2}/.test(v) || /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/.test(v)) { return 'fecha'; }
+    if (v && /^(0|1|s[ií]|no|true|false|v|f)$/i.test(v)) { return 'bin'; }
+    if (v && /^-?\d+([.,]\d+)?$/.test(v)) { return 'num'; }
+    if (v && v.length > 40) { return 'texto'; }
+    return v ? 'cat' : '';
+  }
+
+  /* utf-8 si vale, y si no windows-1252, que es lo que sale de una
+     exportación a CSV hecha desde una hoja de cálculo en español */
+  function textoDe(bytes) {
+    var t = new TextDecoder('utf-8').decode(bytes);
+    if (t.indexOf('�') >= 0) {
+      try { return new TextDecoder('windows-1252').decode(bytes); } catch (e) { /* nos quedamos con utf-8 */ }
+    }
+    return t;
+  }
+
+  function importarCabecera(c, tabla) {
+    /* el campo tiene que estar en el documento: un input suelto no
+       abre el diálogo del sistema dentro de la aplicación */
+    var inp = document.createElement('input');
+    inp.type = 'file';
+    inp.hidden = true;
+    inp.accept = '.csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain';
+    document.body.appendChild(inp);
+    inp.addEventListener('change', function () {
+      var f = inp.files && inp.files[0];
+      setTimeout(function () { inp.remove(); }, 0);
+      if (!f) { return; }
+      var lector = new FileReader();
+      lector.onload = function () {
+        try {
+          /* solo el principio del fichero: no hace falta más y evita
+             cargar en memoria una extracción de varios cientos de MB */
+          var trozo = new Uint8Array(lector.result).slice(0, 65536);
+          var lineas = textoDe(trozo).split(/\r\n|\n|\r/).filter(function (l) { return l.trim(); });
+          if (!lineas.length) { return decir('Ese fichero no tiene ninguna línea.', true); }
+          var sep = separador(lineas[0]);
+          var nombres = partirCSV(lineas[0], sep).map(function (s) {
+            return s.trim().replace(/^"|"$/g, '');
+          });
+          if (nombres.length < 2 && !nombres[0]) { return decir('No se ha reconocido ninguna columna en la primera línea.', true); }
+          var muestra = lineas[1] ? partirCSV(lineas[1], sep) : [];
+
+          var t = tabla;
+          if (!t) {
+            if (!Array.isArray(c.x_tablas)) { c.x_tablas = []; }
+            t = Modelo.tablaNueva(doc, f.name.replace(/\.[^.]+$/, ''));
+            c.x_tablas.push(t);
+          }
+          t.columnas = nombres.map(function (n, i) {
+            return { n: n, tipo: adivinarTipo(n, muestra[i]), d: '' };
+          });
+          cambiado(true);
+          decir(nombres.length + ' columnas leídas de ' + f.name +
+            '. Solo se han tomado los nombres y el tipo adivinado de una fila de muestra: ningún dato del fichero entra en el plan.');
+        } catch (e) {
+          decir('No se ha podido leer la cabecera: ' + (e.message || e), true);
+        }
+      };
+      lector.onerror = function () { decir('No se ha podido leer ese fichero.', true); };
+      lector.readAsArrayBuffer(f.slice(0, 65536));
+    });
+    inp.click();
+  }
+
+  /* --- el diagrama ------------------------------------------------------
+     La disposición la calcula el modelo, para que la pantalla y el PDF
+     no puedan discrepar. Aquí solo se dibuja. */
+
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  function svg(tag, atrib) {
+    var n = document.createElementNS(SVGNS, tag);
+    Object.keys(atrib || {}).forEach(function (k) { n.setAttribute(k, atrib[k]); });
+    return n;
+  }
+  function recortar(txt, max) {
+    txt = String(txt || '');
+    return txt.length > max ? txt.slice(0, max - 1) + '…' : txt;
+  }
+
+  function dibujoEsquema(esq) {
+    var m = 10;
+    var s = svg('svg', {
+      viewBox: '0 0 ' + (esq.ancho + m * 2) + ' ' + (esq.alto + m * 2),
+      width: '100%', height: Math.min(esq.alto + m * 2, 460),
+      role: 'img', 'aria-label': 'Esquema de las tablas del plan y sus enlaces'
+    });
+    s.setAttribute('preserveAspectRatio', 'xMidYMin meet');
+
+    esq.aristas.forEach(function (a) {
+      var g = svg('g', { class: 'arista' });
+      g.appendChild(svg('line', { x1: a.x1 + m, y1: a.y1 + m, x2: a.x2 + m, y2: a.y2 + m }));
+      /* la punta de flecha, orientada según de dónde venga */
+      var dx = a.x2 > a.x1 ? -1 : 1;
+      g.appendChild(svg('polygon', {
+        points: [(a.x2 + m) + ',' + (a.y2 + m),
+          (a.x2 + m + dx * 7) + ',' + (a.y2 + m - 3.2),
+          (a.x2 + m + dx * 7) + ',' + (a.y2 + m + 3.2)].join(' ')
+      }));
+      if (a.texto) {
+        var tx = (a.x1 + a.x2) / 2 + m, ty = (a.y1 + a.y2) / 2 + m;
+        var et = recortar(a.texto, 16);
+        g.appendChild(svg('rect', {
+          x: tx - et.length * 2.5 - 3, y: ty - 11, rx: 3,
+          width: et.length * 5 + 6, height: 11, class: 'et-fondo'
+        }));
+        var tt = svg('text', { x: tx, y: ty - 2.5, 'text-anchor': 'middle', class: 'et' });
+        tt.textContent = et;
+        g.appendChild(tt);
+      }
+      s.appendChild(g);
+    });
+
+    esq.nodos.forEach(function (n) {
+      var g = svg('g', { class: 'nodo', tabindex: '0', role: 'button' });
+      var x = n.x + m, yy = n.y + m;
+
+      /* la caja va recortada por su propio contorno redondeado, que es
+         lo que deja la banda de la cabecera con las esquinas de arriba
+         redondeadas y las de abajo rectas */
+      var idc = 'caja-' + n.id + '-' + Math.random().toString(36).slice(2, 7);
+      var clip = svg('clipPath', { id: idc });
+      clip.appendChild(svg('rect', { x: x, y: yy, width: n.w, height: n.h, rx: 5 }));
+      g.appendChild(clip);
+      var dentro = svg('g', { 'clip-path': 'url(#' + idc + ')' });
+      dentro.appendChild(svg('rect', { x: x, y: yy, width: n.w, height: n.h, class: 'cuerpo' }));
+      dentro.appendChild(svg('rect', { x: x, y: yy, width: n.w, height: 19, class: 'banda' }));
+      g.appendChild(dentro);
+
+      var cod = svg('text', { x: x + 9, y: yy + 13, class: 'cod' });
+      cod.textContent = n.cod;
+      g.appendChild(cod);
+      var nom = svg('text', { x: x + 9 + n.cod.length * 6.2 + 6, y: yy + 13, class: 'nom' });
+      nom.textContent = recortar(n.nombre, 17);
+      g.appendChild(nom);
+      n.granoLineas.forEach(function (ln, k) {
+        var gr = svg('text', { x: x + 9, y: yy + 32 + k * 10,
+          class: 'gr' + (n.grano ? '' : ' falta') });
+        gr.textContent = ln;
+        g.appendChild(gr);
+      });
+      var nc = svg('text', { x: n.x + m + 9, y: n.y + m + 52, class: 'nc' });
+      nc.textContent = n.columnas ? n.columnas + (n.columnas === 1 ? ' columna' : ' columnas') : 'sin columnas';
+      g.appendChild(nc);
+
+      var ir = function () {
+        niveles[5] = true;
+        irA('conjuntos', n.cod);
+      };
+      g.addEventListener('click', ir);
+      g.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ir(); }
+      });
+      g.appendChild(svg('rect', { x: x, y: yy, width: n.w, height: n.h, rx: 5, class: 'marco' }));
+      var titulo = svg('title');
+      titulo.textContent = n.cod + ' · ' + n.nombre + (n.clave ? ' · identificada por ' + n.clave : '');
+      g.appendChild(titulo);
+      s.appendChild(g);
+    });
+
+    var caja = el('div', 'esquema');
+    caja.appendChild(s);
+    return caja;
+  }
+
+  function bloqueEsquema() {
+    var esq = Modelo.esquema(doc);
+    if (!esq.nodos.length) { return null; }
+    var d = el('section', 'grupo-campos');
+    d.appendChild(el('h3', null, 'Esquema de los datos'));
+    d.appendChild(pista(esq.aristas.length
+      ? 'Se dibuja solo con lo que se escribe en la estructura de cada conjunto. Las flechas son los enlaces declarados, y la etiqueta, la columna por la que se unen.'
+      : 'Se dibuja solo con lo que se escribe en la estructura de cada conjunto. Todavía no hay ningún enlace declarado: se indican en «Se une con», dentro de cada tabla.'));
+    d.appendChild(dibujoEsquema(esq));
+    return d;
   }
 
   /* --- revisión y exportación ------------------------------------------ */

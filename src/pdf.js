@@ -84,6 +84,12 @@
     var TENUE = L.rgb(0.62, 0.68, 0.67);
     var ACENTO = L.rgb(0.06, 0.42, 0.39);
     var FALTA = L.rgb(0.62, 0.35, 0.30);
+    /* Fondo oscuro y letra blanca en lo que es estructura: los títulos
+       de apartado, la cabecera de cada tabla y la de cada caja del
+       diagrama. Es lo que deja ver el esqueleto del documento pasando
+       las páginas sin leerlas. */
+    var BANDA = L.rgb(0.12, 0.21, 0.20);
+    var BLANCO = L.rgb(1, 1, 1);
 
     var pagina, y;
 
@@ -134,11 +140,16 @@
         y -= 14;
       },
       seccion: function (titulo, sub) {
-        api.espacio(16);
-        api.sitio(46);
-        api.escribir(titulo.toUpperCase(), { negrita: true, tam: 9.5, color: ACENTO });
+        api.espacio(18);
+        api.sitio(58);
+        var alto = 19;
+        pagina.drawRectangle({ x: MX - 6, y: y - alto + 4, width: ANCHO + 12, height: alto,
+          color: BANDA });
+        pagina.drawText(seguro(titulo.toUpperCase()),
+          { x: MX, y: y - alto + 10, size: 9.5, font: neg, color: BLANCO });
+        y -= alto + 6;
         if (sub) { api.escribir(sub, { tam: 9, color: TENUE }); }
-        api.regla();
+        api.espacio(4);
       },
       sub: function (titulo) {
         api.espacio(10);
@@ -172,11 +183,15 @@
           });
           var n = Math.max.apply(null, trozos.map(function (t) { return t.length; }));
           api.sitio(n * 8.5 * 1.4 + 8);
+          if (negrita) {
+            pagina.drawRectangle({ x: MX - 4, y: y - n * 8.5 * 1.4 - 2,
+              width: ANCHO + 8, height: n * 8.5 * 1.4 + 6, color: BANDA });
+          }
           var x = MX;
           trozos.forEach(function (t, i) {
             t.forEach(function (ln, k) {
               pagina.drawText(ln, { x: x + 2, y: y - 8.5 - k * 8.5 * 1.4, size: 8.5,
-                font: negrita ? neg : reg, color: colorTexto || (negrita ? TINTA : SUAVE) });
+                font: negrita ? neg : reg, color: colorTexto || (negrita ? BLANCO : SUAVE) });
             });
             x += anchos[i];
           });
@@ -198,6 +213,65 @@
         api.sitio(26);
         api.escribir(texto, { tam: 8.5, color: TENUE, cursiva: true });
         api.espacio(3);
+      },
+      /* El diagrama de tablas. La disposición viene calculada del
+         modelo, la misma que dibuja la pantalla, de modo que las dos
+         no pueden discrepar. Aquí solo se traduce a coordenadas de
+         página: la y del modelo crece hacia abajo y la del PDF hacia
+         arriba. */
+      diagrama: function (esq) {
+        if (!esq.nodos.length) { return; }
+        var escala = Math.min(1, ANCHO / esq.ancho);
+        var alto = esq.alto * escala;
+        api.espacio(6);
+        api.sitio(alto + 16);
+        var cima = y;
+        function PX(vx) { return MX + vx * escala; }
+        function PY(vy) { return cima - vy * escala; }
+        function tam(n) { return Math.max(5.2, n * escala); }
+
+        esq.aristas.forEach(function (ar) {
+          pagina.drawLine({ start: { x: PX(ar.x1), y: PY(ar.y1) },
+            end: { x: PX(ar.x2), y: PY(ar.y2) }, thickness: 0.8, color: TENUE });
+          var dx = ar.x2 > ar.x1 ? -1 : 1;
+          [-2.6, 2.6].forEach(function (d) {
+            pagina.drawLine({ start: { x: PX(ar.x2), y: PY(ar.y2) },
+              end: { x: PX(ar.x2) + dx * 6 * escala, y: PY(ar.y2) + d * escala },
+              thickness: 0.8, color: TENUE });
+          });
+          if (ar.texto) {
+            var et = seguro(ar.texto), t6 = tam(6.5);
+            pagina.drawText(et, {
+              x: PX((ar.x1 + ar.x2) / 2) - reg.widthOfTextAtSize(et, t6) / 2,
+              y: PY((ar.y1 + ar.y2) / 2) + 2.5, size: t6, font: reg, color: SUAVE });
+          }
+        });
+
+        esq.nodos.forEach(function (n) {
+          /* cuerpo, banda de cabecera y marco, en ese orden */
+          pagina.drawRectangle({ x: PX(n.x), y: PY(n.y + n.h),
+            width: n.w * escala, height: n.h * escala, color: L.rgb(1, 1, 1) });
+          pagina.drawRectangle({ x: PX(n.x), y: PY(n.y + 19),
+            width: n.w * escala, height: 19 * escala, color: BANDA });
+          pagina.drawRectangle({ x: PX(n.x), y: PY(n.y + n.h),
+            width: n.w * escala, height: n.h * escala,
+            borderWidth: 0.7, borderColor: TENUE });
+
+          var t65 = tam(6.5), t75 = tam(7.5);
+          pagina.drawText(seguro(n.cod), { x: PX(n.x + 9), y: PY(n.y + 13),
+            size: t65, font: neg, color: L.rgb(0.78, 0.85, 0.83) });
+          pagina.drawText(seguro(n.nombre).slice(0, 20),
+            { x: PX(n.x + 9) + reg.widthOfTextAtSize(seguro(n.cod), t65) + 5,
+              y: PY(n.y + 13), size: t75, font: neg, color: BLANCO });
+          n.granoLineas.forEach(function (ln, k) {
+            pagina.drawText(seguro(ln), { x: PX(n.x + 9), y: PY(n.y + 32 + k * 10),
+              size: t65, font: reg, color: n.grano ? TINTA : FALTA });
+          });
+          pagina.drawText(seguro(n.columnas ? n.columnas + ' columnas' : 'sin columnas'),
+            { x: PX(n.x + 9), y: PY(n.y + 52), size: tam(6), font: reg, color: SUAVE });
+        });
+
+        y = cima - alto - 12;
       },
       nota: function (texto) {
         api.espacio(4);
@@ -236,6 +310,36 @@
      cambiado. Las cuarenta y dos tienen respuesta; una que no la
      tuviera saldría marcada, porque omitirla en silencio haría que se
      pasara por alto. */
+  function nombreTabla(doc, id) {
+    var e = global.Modelo.tablasDelPlan(doc).filter(function (x) { return x.tabla.id === id; })[0];
+    return e ? e.cod + ' · ' + (e.tabla.nombre || e.tabla.id) : id;
+  }
+
+  /* La estructura de los conjuntos tabulares: el diagrama y, debajo,
+     lo que el diagrama no cabe que diga. Solo aparece si alguien se ha
+     tomado la molestia de describirla, porque es opcional. */
+  function estructuraEC(a, doc) {
+    var esq = global.Modelo.esquema(doc);
+    if (!esq.nodos.length) { return; }
+    a.sub('Estructura de los conjuntos tabulares');
+    a.diagrama(esq);
+    global.Modelo.tablasDelPlan(doc).forEach(function (e) {
+      var t = e.tabla;
+      var frase = 'Una fila es ' + (String(t.grano || '').trim() || '— sin declarar —');
+      if (String(t.clave || '').trim()) { frase += '. Identificada por ' + t.clave; }
+      if (t.enlace && t.enlace.con) {
+        frase += '. Se une con ' + nombreTabla(doc, t.enlace.con) +
+          (t.enlace.por ? ' por ' + t.enlace.por : '');
+      }
+      a.campo(e.cod + ' · ' + (t.nombre || t.id), frase + '.');
+      if ((t.columnas || []).length) {
+        a.tabla(['Columna', 'Tipo', 'Qué contiene'], t.columnas.map(function (c) {
+          return [c.n || '—', etiqueta(global.Modelo.TIPOS, c.tipo) || '—', c.d || ''];
+        }), [30, 16, 54]);
+      }
+    });
+  }
+
   function respuestasEC(a, doc) {
     var d = doc.dmp, x = doc.x_pgd, M = global.Modelo;
     var hay = d.dataset.length > 0;
@@ -359,10 +463,24 @@
         return [c.x_formato, c.x_vocabularios].filter(Boolean).join('. ');
       }),
       io2: texto(x.x_ontologias, '— no se generan vocabularios propios —'),
-      io3: texto(x.x_referencias),
+      io3: function () {
+        a.campo('', x.x_referencias);
+        var enlaces = M.tablasDelPlan(doc).filter(function (e) {
+          return e.tabla.enlace && e.tabla.enlace.con;
+        });
+        if (enlaces.length) {
+          a.tabla(['Tabla', 'Se une con', 'Por'], enlaces.map(function (e) {
+            return [e.cod + ' · ' + (e.tabla.nombre || e.tabla.id),
+              nombreTabla(doc, e.tabla.enlace.con), e.tabla.enlace.por || '—'];
+          }), [34, 42, 24]);
+        }
+      },
 
       /* --- Increase data re-use --------------------------------------- */
-      ru1: porConjunto('x_diccionario'),
+      ru1: function () {
+        porConjunto('x_diccionario')();
+        estructuraEC(a, doc);
+      },
       ru2: porConjunto('x_licencia', '— sin licencia decidida para ningún conjunto —'),
       ru3: porConjunto('x_utilidad'),
       ru4: texto(x.x_nombrado),

@@ -11,10 +11,13 @@
      texto queda por encima de 4.5:1 sobre su fondo, en los dos temas.
    · **Un tono por grupo del índice.** Es lo único que dice, sin leer
      nada, en qué parte del documento se está trabajando: la etiqueta
-     del grupo, el filo del apartado seleccionado y la cejilla que
-     encabeza el panel llevan el mismo color. Aparece solo en esos tres
-     sitios y siempre en piezas pequeñas; el resto de la pantalla es
-     gris, y el verde sigue significando «esto se puede pulsar».
+     del grupo, el filo del apartado seleccionado y la banda que
+     encabeza el panel llevan el mismo color. El resto de la pantalla
+     es gris, y el verde sigue significando «esto se puede pulsar».
+   · **Fondo oscuro y letra blanca en lo que es estructura**: la
+     cabecera del apartado, los rótulos de grupo, las cabeceras de
+     tabla y la de cada caja del diagrama. Separa de un vistazo el
+     armazón del documento de lo que se escribe dentro.
    ------------------------------------------------------------------ */
 :root{
   --paper:#e6eae8; --lienzo:#ffffff; --barra-f:#f3f6f5;
@@ -36,6 +39,21 @@
   --t-difusion:#1d6a44;
   --t-gestion:#77501e;
   --t-cierre:#4a5350;
+
+  /* Las bandas: fondo oscuro y letra blanca en lo que es estructura
+     —la cabecera del apartado, los rótulos de grupo, las cabeceras de
+     tabla—, para que se distinga de un vistazo del contenido. En claro
+     la banda es el propio tono; en oscuro, una versión apagada suya,
+     porque la letra blanca necesita fondo oscuro en los dos temas. */
+  --f-documento:#3f5566;
+  --f-datos:#0f6b62;
+  --f-documentacion:#2a6b93;
+  --f-legal:#8f3320;
+  --f-custodia:#57499a;
+  --f-difusion:#1d6a44;
+  --f-gestion:#77501e;
+  --f-cierre:#4a5350;
+  --banda:#33403d; --banda-t:#ffffff;
 
   --fuente:-apple-system,BlinkMacSystemFont,"Segoe UI Variable Text","Segoe UI",
            Inter,Ubuntu,"Helvetica Neue",Arial,sans-serif;
@@ -61,6 +79,16 @@
     --t-difusion:#6cc394;
     --t-gestion:#d5a96b;
     --t-cierre:#a6b1ad;
+
+    --f-documento:#24323c;
+    --f-datos:#0f312d;
+    --f-documentacion:#163040;
+    --f-legal:#3b1d14;
+    --f-custodia:#272144;
+    --f-difusion:#123021;
+    --f-gestion:#33250f;
+    --f-cierre:#232a29;
+    --banda:#39423f; --banda-t:#f2f6f4;
   }
 }
 :root[data-theme="dark"]{
@@ -82,17 +110,27 @@
   --t-difusion:#6cc394;
   --t-gestion:#d5a96b;
   --t-cierre:#a6b1ad;
+
+  --f-documento:#24323c;
+  --f-datos:#0f312d;
+  --f-documentacion:#163040;
+  --f-legal:#3b1d14;
+  --f-custodia:#272144;
+  --f-difusion:#123021;
+  --f-gestion:#33250f;
+  --f-cierre:#232a29;
+  --banda:#39423f; --banda-t:#f2f6f4;
 }
 
 /* cada grupo del índice lleva el suyo; todo lo demás lo lee de --g */
-.t-documento{--g:var(--t-documento)}
-.t-datos{--g:var(--t-datos)}
-.t-documentacion{--g:var(--t-documentacion)}
-.t-legal{--g:var(--t-legal)}
-.t-custodia{--g:var(--t-custodia)}
-.t-difusion{--g:var(--t-difusion)}
-.t-gestion{--g:var(--t-gestion)}
-.t-cierre{--g:var(--t-cierre)}
+.t-documento{--g:var(--t-documento); --gf:var(--f-documento)}
+.t-datos{--g:var(--t-datos); --gf:var(--f-datos)}
+.t-documentacion{--g:var(--t-documentacion); --gf:var(--f-documentacion)}
+.t-legal{--g:var(--t-legal); --gf:var(--f-legal)}
+.t-custodia{--g:var(--t-custodia); --gf:var(--f-custodia)}
+.t-difusion{--g:var(--t-difusion); --gf:var(--f-difusion)}
+.t-gestion{--g:var(--t-gestion); --gf:var(--f-gestion)}
+.t-cierre{--g:var(--t-cierre); --gf:var(--f-cierre)}
 
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -243,23 +281,26 @@ button.barra-b .insignia.limpio{background:var(--accent-soft); color:var(--ok)}
 /* y nada de lo que se escriba puede salirse de su caja */
 .panel *{max-width:100%; min-width:0}
 
-.cab{margin-bottom:6px; padding-left:12px; border-left:3px solid var(--g,var(--accent))}
-.cab .volver{border:0; background:none; padding:0 0 8px; color:var(--ink-3); font-size:11.5px}
-.cab .volver:hover{color:var(--accent-ink); background:none}
+.cab{margin-bottom:14px; padding:11px 14px 12px; border-radius:6px;
+  background:var(--gf,var(--banda)); color:#fff}
+.cab .volver{border:0; background:none; padding:0 0 7px; font-size:11.5px;
+  color:rgba(255,255,255,.82)}
+.cab .volver:hover{color:#fff; background:rgba(255,255,255,.13)}
 .cab .cejilla{
   margin:0 0 4px; font-size:10px; font-weight:700; letter-spacing:.08em;
-  text-transform:uppercase; color:var(--g,var(--accent));
+  text-transform:uppercase; color:rgba(255,255,255,.78);
 }
-.cab h2{font-size:17px; font-weight:600; line-height:1.25; margin:0; letter-spacing:-.01em}
-.cab h2 .num{font-family:var(--mono); font-size:12px; color:var(--ink-3);
+.cab h2{font-size:17px; font-weight:600; line-height:1.25; margin:0;
+  letter-spacing:-.01em; color:#fff}
+.cab h2 .num{font-family:var(--mono); font-size:12px; color:rgba(255,255,255,.7);
   margin-right:9px; font-weight:500}
 .pista{font-size:12.5px; color:var(--ink-2); margin:11px 0 16px; line-height:1.55; max-width:70ch}
 
 .grupo-campos{margin-bottom:26px}
 .grupo-campos > h3{
   font-size:10.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
-  color:var(--ink-2); margin:0 0 10px; padding-bottom:5px;
-  border-bottom:1px solid var(--line-2);
+  color:var(--banda-t); background:var(--banda); margin:0 0 12px;
+  padding:5px 10px; border-radius:5px;
 }
 .grupo-campos .pista{margin-top:0}
 
@@ -342,7 +383,14 @@ button.enlace:hover{background:var(--surface-2)}
   border-radius:0; padding:8px 12px; color:var(--ink)}
 .nivel-cab:hover{background:var(--surface-2)}
 .nivel.abierto .nivel-cab{border-bottom:1px solid var(--line); background:var(--surface-2)}
-.nivel .flecha{color:var(--ink-3); font-size:9px; width:9px; flex:none}
+/* Los triángulos dibujados con bordes, no con caracteres: ▸ y ▾ salen
+   de un tamaño distinto en cada sistema, y a 9 px parecen un punto. */
+.nivel .flecha{flex:none; width:0; height:0; margin:0 2px 0 1px;
+  border-left:5px solid var(--ink-3);
+  border-top:4px solid transparent; border-bottom:4px solid transparent}
+.nivel.abierto .flecha{margin:2px 0 0 -1px;
+  border-left:4px solid transparent; border-right:4px solid transparent;
+  border-top:5px solid var(--ink-3); border-bottom:0}
 .nivel-n{font-family:var(--mono); font-size:10.5px; background:var(--surface-3);
   color:var(--ink-2); border-radius:4px; padding:1px 6px; flex:none}
 .nivel-t{flex:1; min-width:0; font-weight:600; overflow:hidden;
@@ -354,12 +402,61 @@ button.enlace:hover{background:var(--surface-2)}
 .entre-conjuntos{display:flex; gap:8px; flex-wrap:wrap; margin-top:20px;
   padding-top:14px; border-top:1px solid var(--line)}
 
+/* ---------- estructura: tablas y columnas ---------- */
+.tabla-caja{border:1px solid var(--line-2); border-radius:6px; background:var(--surface);
+  padding:11px 12px 12px; margin-bottom:10px}
+.tabla-cab{display:flex; align-items:center; gap:8px; margin-bottom:11px}
+input.tabla-nombre{flex:1; min-width:0; font-weight:600; width:auto}
+.columnas-caja{margin-top:13px; padding-top:10px; border-top:1px solid var(--line)}
+.columnas-cab{display:flex; align-items:center; gap:6px; margin-bottom:7px}
+.columnas-cab h4{margin:0; font-size:10px; font-weight:700;
+  letter-spacing:.07em; text-transform:uppercase;
+  color:var(--banda-t); background:var(--banda); padding:3px 8px; border-radius:4px}
+.columnas-cab .hueco{flex:1; min-width:0}
+.columnas-lista{display:grid; gap:4px}
+.columna-fila{display:grid; gap:5px; align-items:center;
+  grid-template-columns:minmax(0,1fr) 104px minmax(0,1.45fr) 22px}
+.columna-fila input, .columna-fila select{font-size:12px; padding:3px 7px}
+.columna-fila select{padding-right:22px; background-position:calc(100% - 12px) 52%, calc(100% - 8px) 52%}
+.columna-fila.encabezado{font-size:9.5px; font-weight:700; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-3); padding:0 2px 1px}
+button.quitar-col{border:0; background:none; color:var(--ink-3); padding:2px 4px;
+  font-size:13px; line-height:1; border-radius:4px}
+button.quitar-col:hover{background:var(--alerta-soft); color:var(--alerta)}
+@media (max-width:620px){
+  .columna-fila{grid-template-columns:minmax(0,1fr) 90px 22px}
+  .columna-fila > *:nth-child(3){grid-column:1 / -1}
+  .columna-fila.encabezado > *:nth-child(3){display:none}
+}
+
+/* ---------- el diagrama, dibujado a partir de lo escrito ---------- */
+.esquema{border:1px solid var(--line-2); border-radius:6px; background:var(--surface);
+  padding:8px; overflow-x:auto}
+.esquema svg{display:block}
+.esquema text{font-family:var(--fuente)}
+.esquema .cuerpo{fill:var(--surface)}
+.esquema .banda{fill:var(--f-datos)}
+.esquema .marco{fill:none; stroke:var(--line-3); stroke-width:1}
+.esquema .nodo:hover .cuerpo{fill:var(--accent-soft)}
+.esquema .nodo:hover .marco{stroke:var(--accent)}
+.esquema .nodo:focus{outline:none}
+.esquema .nodo:focus-visible .marco{stroke:var(--accent); stroke-width:2}
+.esquema .cod{font-family:var(--mono); font-size:9px; fill:rgba(255,255,255,.72)}
+.esquema .nom{font-size:10.5px; font-weight:600; fill:#fff}
+.esquema .gr{font-size:9px; fill:var(--ink-2)}
+.esquema .gr.falta{fill:var(--aviso)}
+.esquema .nc{font-size:8.5px; fill:var(--ink-3)}
+.esquema .arista line{stroke:var(--line-3); stroke-width:1.1}
+.esquema .arista polygon{fill:var(--line-3)}
+.esquema .et-fondo{fill:var(--surface)}
+.esquema .et{font-family:var(--mono); font-size:8px; fill:var(--ink-2)}
+
 /* ---------- tabla resumen ---------- */
 .tabla-resumen{overflow-x:auto; margin:0 0 16px; border:1px solid var(--line-2);
   border-radius:6px; background:var(--surface)}
 .tabla-resumen table{border-collapse:collapse; width:100%; font-size:12px}
-.tabla-resumen th{text-align:left; font-weight:700; color:var(--ink-2);
-  background:var(--surface-2); border-bottom:1px solid var(--line-2);
+.tabla-resumen th{text-align:left; font-weight:700; color:var(--banda-t);
+  background:var(--banda); border-bottom:0;
   padding:6px 10px; font-size:10.5px; letter-spacing:.04em; text-transform:uppercase}
 .tabla-resumen td{padding:6px 10px; border-bottom:1px solid var(--line);
   vertical-align:top; color:var(--ink-2)}

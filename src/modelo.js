@@ -111,7 +111,24 @@
       campos: ['x_identificabilidad', 'x_intrinseca', 'x_seudonimizacion'] },
     { id: 4, titulo: 'Documentación para la reutilización',
       pista: 'La ficha describe qué es el conjunto. Las decisiones sobre él —emplazamiento, plazo de conservación y destino— se toman en los apartados 7, 8 y 9, donde los conjuntos se presentan juntos y sus diferencias quedan a la vista.',
-      campos: ['keyword', 'data_quality_assurance', 'x_utilidad', 'x_responsable'] }
+      campos: ['keyword', 'data_quality_assurance', 'x_utilidad', 'x_responsable'] },
+    { id: 5, titulo: 'Estructura de los datos', opcional: true,
+      pista: 'Solo para conjuntos tabulares, y solo si se quiere entrar en ese detalle. Lo que de verdad hace falta es una frase por tabla: qué representa una fila. Sin ella, quien reciba el fichero no sabe si tiene trescientos pacientes o mil doscientas visitas, y cualquier recuento que haga estará mal.',
+      campos: [] }
+  ];
+
+  /* Los tipos de columna. Deliberadamente pocos: el plan no es un
+     esquema de base de datos, y distinguir entre entero y decimal no
+     cambia ninguna decisión. */
+  var TIPOS = [
+    { v: '', t: '—' },
+    { v: 'id', t: 'Identificador' },
+    { v: 'fecha', t: 'Fecha' },
+    { v: 'num', t: 'Numérico' },
+    { v: 'cat', t: 'Categórico' },
+    { v: 'bin', t: 'Sí / no' },
+    { v: 'texto', t: 'Texto libre' },
+    { v: 'fichero', t: 'Fichero o ruta' }
   ];
 
   var ORIGEN = [
@@ -189,6 +206,7 @@
          en singular. */
       x_diccionario: '',
       x_vocabularios: '',
+      x_tablas: [],
       x_base_legal: '',
       x_alcance: '',
       x_emplazamiento: '',
@@ -201,6 +219,153 @@
       x_repositorio: '',
       x_licencia: ''
     };
+  }
+
+  /* --- Estructura de un conjunto tabular -------------------------------
+     Un conjunto puede describirse con más detalle: sus tablas, qué
+     representa una fila de cada una, qué la identifica y por qué
+     columna se une con otra. Es opcional y casi siempre sobra en los
+     conjuntos que no son tabulares.
+
+     No hay editor de diagramas, y es deliberado: colocar cajas con el
+     ratón no añade una sola cosa que el plan necesite saber. Se teclea
+     el enlace y el diagrama se dibuja solo, aquí abajo, con la misma
+     disposición para la pantalla y para el PDF.                       */
+
+  function siguienteIdTabla(doc) {
+    var max = 0;
+    (doc.dmp.dataset || []).forEach(function (c) {
+      (c.x_tablas || []).forEach(function (t) {
+        var m = /^T(\d+)$/.exec(t.id || '');
+        if (m) { max = Math.max(max, parseInt(m[1], 10)); }
+      });
+    });
+    return 'T' + (max + 1);
+  }
+
+  function tablaNueva(doc, nombre) {
+    return {
+      id: siguienteIdTabla(doc),
+      nombre: nombre || '',
+      grano: '',
+      clave: '',
+      enlace: { con: '', por: '' },
+      columnas: []
+    };
+  }
+
+  function columnaNueva(nombre, tipo) {
+    return { n: nombre || '', tipo: tipo || '', d: '' };
+  }
+
+  /* Todas las tablas del plan, con el conjunto al que pertenecen. */
+  function tablasDelPlan(doc) {
+    var r = [];
+    (doc.dmp.dataset || []).forEach(function (c) {
+      (c.x_tablas || []).forEach(function (t) {
+        r.push({ conjunto: c, tabla: t, cod: c.dataset_id.identifier });
+      });
+    });
+    return r;
+  }
+
+  var CAJA = { ancho: 156, alto: 56, huecoX: 84, huecoY: 16 };
+
+  /* Parte un texto en líneas cortas sin romper palabras. Lo hace el
+     modelo porque el número de líneas decide la altura de la caja, y
+     la altura tiene que ser la misma en la pantalla y en el PDF. */
+  function partirCorto(txt, max, maxLineas) {
+    var lineas = [], ln = '';
+    String(txt == null ? '' : txt).split(/\s+/).filter(Boolean).forEach(function (p) {
+      var prueba = ln ? ln + ' ' + p : p;
+      if (prueba.length > max && ln) { lineas.push(ln); ln = p; } else { ln = prueba; }
+    });
+    if (ln) { lineas.push(ln); }
+    if (lineas.length > maxLineas) {
+      lineas = lineas.slice(0, maxLineas);
+      lineas[maxLineas - 1] = lineas[maxLineas - 1].slice(0, max - 1) + '…';
+    }
+    return lineas;
+  }
+
+  /* La disposición del diagrama, en puntos y con la y hacia abajo.
+     La calcula el modelo y no cada dibujante, para que la pantalla y
+     el PDF no puedan discrepar.
+
+     Las tablas que enlazan con otra van a la izquierda y aquella con
+     la que enlazan, a la derecha: en la práctica eso coloca sola la
+     tabla de sujetos al final, que es donde todo el mundo la busca. */
+  function esquema(doc) {
+    var lista = tablasDelPlan(doc);
+    var porId = {};
+    lista.forEach(function (e) { porId[e.tabla.id] = e; });
+
+    function salto(id, visto) {
+      var e = porId[id];
+      if (!e || visto[id]) { return 0; }
+      var con = e.tabla.enlace && e.tabla.enlace.con;
+      if (!con || !porId[con]) { return 0; }
+      visto[id] = true;
+      return 1 + salto(con, visto);
+    }
+
+    var nivel = {}, maxNivel = 0;
+    lista.forEach(function (e) {
+      nivel[e.tabla.id] = salto(e.tabla.id, {});
+      maxNivel = Math.max(maxNivel, nivel[e.tabla.id]);
+    });
+
+    var columnas = [];
+    lista.forEach(function (e) {
+      var col = maxNivel - nivel[e.tabla.id];
+      (columnas[col] = columnas[col] || []).push(e);
+    });
+
+    var altoMax = 0;
+    columnas.forEach(function (c) {
+      if (c) { altoMax = Math.max(altoMax, c.length * CAJA.alto + (c.length - 1) * CAJA.huecoY); }
+    });
+
+    var nodos = [], porNodo = {};
+    columnas.forEach(function (c, i) {
+      if (!c) { return; }
+      var alto = c.length * CAJA.alto + (c.length - 1) * CAJA.huecoY;
+      var y0 = (altoMax - alto) / 2;
+      c.forEach(function (e, k) {
+        var n = {
+          id: e.tabla.id,
+          cod: e.cod,
+          nombre: e.tabla.nombre || 'sin nombre',
+          grano: e.tabla.grano || '',
+          granoLineas: String(e.tabla.grano || '').trim()
+            ? partirCorto('una fila = ' + e.tabla.grano, 30, 2)
+            : ['sin decir qué es una fila'],
+          clave: e.tabla.clave || '',
+          columnas: (e.tabla.columnas || []).length,
+          x: i * (CAJA.ancho + CAJA.huecoX),
+          y: y0 + k * (CAJA.alto + CAJA.huecoY),
+          w: CAJA.ancho, h: CAJA.alto
+        };
+        nodos.push(n);
+        porNodo[n.id] = n;
+      });
+    });
+
+    var aristas = [];
+    lista.forEach(function (e) {
+      var en = e.tabla.enlace || {};
+      var a = porNodo[e.tabla.id], b = porNodo[en.con];
+      if (!a || !b || a === b) { return; }
+      var alDerecho = b.x > a.x;
+      aristas.push({
+        de: a.id, a: b.id, texto: en.por || '',
+        x1: alDerecho ? a.x + a.w : a.x, y1: a.y + a.h / 2,
+        x2: alDerecho ? b.x : b.x + b.w, y2: b.y + b.h / 2
+      });
+    });
+
+    var ancho = columnas.length ? columnas.length * CAJA.ancho + (columnas.length - 1) * CAJA.huecoX : 0;
+    return { nodos: nodos, aristas: aristas, ancho: ancho, alto: altoMax };
   }
 
   /* --- Los apartados con campos ----------------------------------------
@@ -404,6 +569,16 @@
   function nivelHecho(c, nivel) {
     var n = NIVELES.filter(function (x) { return x.id === nivel; })[0];
     if (!n) { return { hechos: 0, total: 0 }; }
+    /* La estructura no se cuenta por campos rellenos sino por tablas
+       que ya dicen qué representa una fila, que es lo único que este
+       nivel persigue. */
+    if (n.id === 5) {
+      var tablas = c.x_tablas || [];
+      return {
+        hechos: tablas.filter(function (t) { return String(t.grano || '').trim(); }).length,
+        total: tablas.length
+      };
+    }
     var hechos = 0;
     n.campos.forEach(function (k) {
       var v = c[k];
@@ -732,6 +907,10 @@
     estadoSeccion: estadoSeccion,
     nivelHecho: nivelHecho,
     campoVisible: campoVisible,
+    tablaNueva: tablaNueva,
+    columnaNueva: columnaNueva,
+    tablasDelPlan: tablasDelPlan,
+    esquema: esquema,
     aJSON: aJSON,
     desdeJSON: desdeJSON,
     subirVersion: subirVersion,
@@ -749,6 +928,7 @@
     IDENTIFICABILIDAD: IDENTIFICABILIDAD,
     DESTINO: DESTINO,
     SI_NO: SI_NO,
+    TIPOS: TIPOS,
     BASE_LEGAL: BASE_LEGAL,
     EIPD: EIPD,
     ESTADO_FINANCIACION: ESTADO_FINANCIACION

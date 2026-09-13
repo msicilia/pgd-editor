@@ -3,9 +3,8 @@
 Redacta un plan de gestión de datos y lo exporta al formato de la Comisión
 Europea, con el propio plan incorporado dentro del PDF para poder retomarlo.
 
-Los once apartados tienen campos. La **estructura de los conjuntos** —qué
-tablas hay, qué representa una fila, cómo se enlazan— queda deliberadamente
-fuera por ahora.
+Los once apartados tienen campos, y los conjuntos tabulares pueden describir
+además su estructura.
 
 ## Probarla ahora mismo
 
@@ -31,10 +30,14 @@ codifica los diagnósticos. La estructura de la Comisión Europea se obtiene al
 exportar.
 
 **Cada grupo del índice lleva un tono**, y ese mismo color aparece en el filo
-del apartado seleccionado y en la cejilla que encabeza el panel. Es lo único
-que dice, sin leer nada, en qué parte del documento se está trabajando; el
-resto de la pantalla es gris, y el verde sigue significando «esto se puede
-pulsar».
+del apartado seleccionado y en la banda que encabeza el panel. Es lo único que
+dice, sin leer nada, en qué parte del documento se está trabajando; el resto de
+la pantalla es gris, y el verde sigue significando «esto se puede pulsar».
+
+**Fondo oscuro y letra blanca en lo que es estructura**: la cabecera del
+apartado, los rótulos de grupo, las cabeceras de tabla y la de cada caja del
+diagrama. Separa de un vistazo el armazón del documento de lo que se escribe
+dentro, y vale igual en la pantalla y en el PDF.
 
 **No hay botón de guardar.** Se guarda solo mientras se escribe. El botón que sí
 existe es *exportar*, porque exportar sí es una decisión que toma una persona.
@@ -66,10 +69,33 @@ resultados— tienen solo la parte de proyecto, y en muestras la primera
 pregunta apaga las demás: un proyecto que no maneja ninguna lo declara y el
 apartado queda resuelto.
 
+## La estructura, sin dibujar nada
+
+Un conjunto tabular puede describir sus tablas: **qué representa una fila**, qué
+la identifica y por qué columna se une con otra. Es opcional, y en los
+conjuntos que no son tabulares sobra.
+
+**No hay editor de diagramas, y es deliberado.** Colocar cajas con el ratón no
+añade una sola cosa que el plan necesite saber: lo que hace falta es la frase
+del grano, y eso se teclea en un minuto. El diagrama se dibuja solo a partir de
+los enlaces declarados, en la pantalla y en el PDF. `Modelo.esquema()` calcula
+una única disposición que usan los dos dibujantes, de modo que no pueden
+discrepar.
+
+La frase del grano es la que casi nunca está y la que más se echa de menos: sin
+ella, quien reciba el fichero no sabe si tiene trescientos pacientes o mil
+doscientas visitas, y cualquier recuento que haga estará mal.
+
+**La cabecera de un CSV se puede leer**, y es lo que evita teclear sesenta
+nombres a mano —que es la razón real de que este apartado no se rellene nunca—.
+Se leen solo los primeros 64 KB: la primera línea da los nombres y la segunda
+sirve para adivinar el tipo. Ningún dato del fichero entra en el plan ni sale
+del ordenador.
+
 ## La ficha de un conjunto, por niveles
 
 La ficha tiene catorce campos, y pedirlos de golpe la primera vez es la forma
-más segura de que no se rellene ninguno. Van en cuatro niveles, y cada uno dice
+más segura de que no se rellene ninguno. Van por niveles, y cada uno dice
 *3 de 4* con el nivel cerrado:
 
 | | Nivel | Qué contiene |
@@ -78,6 +104,7 @@ más segura de que no se rellene ninguno. Van en cuatro niveles, y cada uno dice
 | 2 | De dónde sale y qué forma tiene | Origen, sistema, formato, volumen |
 | 3 | Identificabilidad | Nivel, identificabilidad intrínseca, custodia de la clave |
 | 4 | Para quién sirve | Palabras clave, calidad, utilidad fuera del proyecto, responsable |
+| 5 | Estructura | Opcional: tablas, grano, clave, enlaces y columnas |
 
 La ficha describe **qué es** el conjunto. **Qué se hace con él** se decide en los
 apartados 7, 8 y 9, por lo dicho arriba.
@@ -195,12 +222,12 @@ Comisión los renumera al revisar la plantilla.
 
 ## Lo que falta, por orden de utilidad
 
-1. **Estructura y granularidad** de cada conjunto: qué tablas hay, qué
-   representa una fila, cómo se enlazan.
-2. **Más comprobaciones cruzadas**: plazos de conservación incompatibles entre
+1. **Más comprobaciones cruzadas**: plazos de conservación incompatibles entre
    conjuntos que se unen, repositorios que no admiten lo que se les promete.
-3. **Otras plantillas**, si hacen falta: un exportador y un fichero de
+2. **Otras plantillas**, si hacen falta: un exportador y un fichero de
    correspondencias por cada una.
+3. **Enlaces múltiples** por tabla: ahora cada una declara uno, que es lo que
+   cubre el caso normal —todo se une a la tabla de sujetos por el mismo código—.
 
 La regla que conviene no romper: cada plantilla nueva es **un exportador y un
 fichero de correspondencias**. Si un campo propio de una plantilla concreta
