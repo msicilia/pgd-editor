@@ -153,6 +153,35 @@
     });
   }
 
+  /* ¿Tiene algo escrito, en cualquier nivel o apartado? Preguntar antes
+     de borrar solo cuando hay algo que perder evita el diálogo inútil
+     del conjunto recién creado, y evita también borrar sin aviso uno
+     que tenía media ficha rellena aunque le faltara el nombre. */
+  function tieneContenido(c) {
+    return Object.keys(c).some(function (k) {
+      if (k === 'dataset_id') { return false; }
+      var v = c[k];
+      if (Array.isArray(v)) { return v.length > 0; }
+      if (k === 'personal_data' || k === 'sensitive_data') { return v && v !== 'unknown'; }
+      return String(v == null ? '' : v).trim() !== '';
+    });
+  }
+
+  function eliminarConjunto(c, alTerminar) {
+    var id = c.dataset_id.identifier;
+    if (tieneContenido(c)) {
+      var n = ['x_diccionario', 'x_emplazamiento', 'x_plazo', 'x_destino']
+        .filter(function (k) { return String(c[k] || '').trim(); }).length;
+      var extra = n ? '\n\nTiene decisiones tomadas en otros apartados, que se perderán también.' : '';
+      if (!confirm('¿Eliminar ' + id + (c.title ? ' · ' + c.title : '') + '?' + extra)) { return; }
+    }
+    var i = doc.dmp.dataset.indexOf(c);
+    if (i >= 0) { doc.dmp.dataset.splice(i, 1); }
+    delete temaAbierto[id];
+    if (alTerminar) { alTerminar(); } else { cambiado(true); }
+    decir(id + ' eliminado. El identificador no se reutiliza.');
+  }
+
   function anadirConjunto() {
     var c = Modelo.conjuntoNuevo(doc);
     doc.dmp.dataset.push(c);
@@ -491,15 +520,11 @@
     det.addEventListener('click', function () { irA('conjuntos', id); });
     cab.appendChild(det);
 
-    var borrar = el('button', 'discreto', 'Eliminar');
+    var borrar = el('button', 'borrar', 'Eliminar');
     borrar.type = 'button';
+    borrar.title = 'Eliminar ' + id;
     borrar.setAttribute('aria-label', 'Eliminar ' + id);
-    borrar.addEventListener('click', function () {
-      if ((c.title.trim() || c.description.trim()) &&
-          !confirm('¿Eliminar ' + id + (c.title ? ' · ' + c.title : '') + '?')) { return; }
-      doc.dmp.dataset.splice(i, 1);
-      cambiado(true);
-    });
+    borrar.addEventListener('click', function () { eliminarConjunto(c); });
     cab.appendChild(borrar);
     caja.appendChild(cab);
 
@@ -562,6 +587,16 @@
       nav.appendChild(sig);
     }
     if (nav.childNodes.length) { p.appendChild(nav); }
+
+    var zona = el('div', 'zona-borrar');
+    var bb = el('button', 'borrar', 'Eliminar ' + id);
+    bb.type = 'button';
+    bb.addEventListener('click', function () {
+      eliminarConjunto(c, function () { irA('conjuntos', null); cambiado(); });
+    });
+    zona.appendChild(bb);
+    zona.appendChild(el('span', 'menor', 'Se elimina de todos los apartados. El identificador ' + id + ' no se reutiliza.'));
+    p.appendChild(zona);
   }
 
   function nivelCaja(c, n) {

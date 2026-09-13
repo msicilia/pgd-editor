@@ -293,3 +293,12 @@ button.enlace:hover{background:var(--surface-2); border-color:transparent}
   font-size:12px; color:var(--accent-ink); white-space:nowrap}
 .tabla-resumen td.falta{color:var(--aviso); font-style:italic}
 .nivel-cab .cod{margin-right:2px}
+
+/* ---------- eliminar un conjunto ---------- */
+button.borrar{border-color:var(--line-2); background:var(--surface);
+  color:var(--ink-3); padding:5px 11px; font-size:13px}
+button.borrar:hover:not(:disabled){border-color:var(--alerta); color:var(--alerta);
+  background:var(--alerta-soft)}
+.zona-borrar{display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  margin-top:30px; padding-top:18px; border-top:1px solid var(--line)}
+.zona-borrar .menor{flex:1; min-width:220px; margin:0}
