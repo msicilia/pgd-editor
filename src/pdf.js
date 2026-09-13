@@ -194,6 +194,15 @@
         filas.forEach(function (f) { fila(f, false); });
         api.espacio(6);
       },
+      /* Las preguntas de la plantilla europea, tal como figuran en el
+         formulario. Van en inglés a propósito: son la cadena que hay
+         que buscar en el documento de la Comisión al volcar. */
+      pregunta: function (texto) {
+        api.espacio(7);
+        api.sitio(26);
+        api.escribir(texto, { tam: 8.5, color: TENUE, cursiva: true });
+        api.espacio(3);
+      },
       nota: function (texto) {
         api.espacio(4);
         api.escribir(texto, { tam: 9, color: TENUE, cursiva: true });
@@ -320,151 +329,195 @@
      ================================================================ */
   function disposicionEC(a, doc) {
     var d = doc.dmp, x = doc.x_pgd, M = global.Modelo;
-    var T = M.TEMAS;
+    var hay = d.dataset.length > 0;
+
+    function porConjunto(campos, vacio) {
+      if (!hay) { return a.pendiente(vacio || 'No hay conjuntos declarados.'); }
+      var algo = false;
+      d.dataset.forEach(function (c) {
+        var v = campos(c);
+        if (!String(v || '').trim()) { return; }
+        algo = true;
+        a.campo(c.dataset_id.identifier + ' · ' + (c.title || 'sin nombre'), v);
+      });
+      if (!algo) { a.pendiente(vacio || 'Sin cumplimentar para ningún conjunto.'); }
+    }
 
     a.nuevaPagina();
     a.escribir('DATA MANAGEMENT PLAN', { negrita: true, tam: 9.5, color: a.ACENTO });
     a.espacio(10);
     a.escribir(d.title || 'Sin título', { negrita: true, tam: 21 });
     a.espacio(6);
-    a.escribir('Versión ' + x.version + ' · ' + (x.fecha_version || ''), { tam: 11, color: a.SUAVE });
+    a.escribir('Versión ' + x.version + ' · ' + (x.fecha_version || '') +
+      ' · ' + (x.estado === 'cerrada' ? 'versión cerrada' : 'borrador'),
+      { tam: 11, color: a.SUAVE });
     a.espacio(6);
     a.escribir([d.project[0].funding[0].name, d.dmp_id.identifier, x.institucion]
       .filter(Boolean).join('  ·  '), { tam: 10, color: a.SUAVE });
     a.espacio(14);
     a.regla();
-    a.nota('Volcado a la estructura de la plantilla de plan de gestión de datos de la Comisión Europea. Sus apartados se citan por el título y no por el número, porque la Comisión los renumera al revisar la plantilla. La plantilla es recomendada, no obligatoria: lo que obliga es el acuerdo de subvención.');
+    a.nota('Documento volcado a la estructura de la plantilla de plan de gestión de datos de Horizon Europe. Bajo cada apartado figuran, en inglés y en cursiva, las preguntas tal como aparecen en el formulario de la Comisión, para poder localizarlas al trasladar las respuestas. Los apartados se citan por su título y no por su número: la Comisión los renumera al revisar la plantilla. La plantilla es recomendada, no obligatoria; lo que obliga es el acuerdo de subvención.');
 
-    /* --- Data Summary --- */
+    /* ---------------- Data Summary ---------------- */
     a.seccion('Data Summary', 'Resumen de los datos');
-    a.campo('Finalidad de los datos y su relación con los objetivos', d.description);
-    if (d.dataset.length) {
-      a.sub('Tipos, formatos, procedencia y volumen');
-      a.tabla(['Id', 'Conjunto', 'Origen', 'Formato', 'Volumen'],
+
+    a.pregunta('What is the purpose of the data generation or re-use and its relation to the objectives of the project?');
+    a.campo('Finalidad de los datos', d.description);
+
+    a.pregunta('What types and formats of data will the project generate or re-use?');
+    if (hay) {
+      a.tabla(['Id', 'Conjunto', 'Formato', 'Volumen'],
         d.dataset.map(function (c) {
-          return [c.dataset_id.identifier, c.title || 'sin nombre',
-            etiqueta(M.ORIGEN, c.x_origen) || '—', c.x_formato || '—', c.x_volumen || '—'];
-        }), [7, 34, 24, 15, 20]);
-      a.sub('Reutilización de datos existentes');
-      var reutil = d.dataset.filter(function (c) {
-        return c.x_origen === 'reutilizado' || c.x_origen === 'cedido' || c.x_origen === 'asistencial';
-      });
-      if (!reutil.length) {
-        a.parrafo('El proyecto no reutiliza datos preexistentes: todos los conjuntos se recogen de nuevo o se derivan de los recogidos.');
-      } else {
-        reutil.forEach(function (c) {
-          a.campo(c.dataset_id.identifier + ' · ' + (c.title || ''),
-            etiqueta(M.ORIGEN, c.x_origen) + (c.x_sistema ? '. Sistema de origen: ' + c.x_sistema : ''));
-        });
-      }
-      a.sub('Utilidad fuera del proyecto');
-      d.dataset.forEach(function (c) {
-        a.campo(c.dataset_id.identifier, c.x_utilidad, { omitirVacio: true });
+          return [c.dataset_id.identifier, c.title || 'sin nombre', c.x_formato || '—', c.x_volumen || '—'];
+        }), [7, 44, 20, 29]);
+    } else { a.pendiente('No hay conjuntos declarados.'); }
+
+    a.pregunta('What is the expected size of the data that you intend to generate or re-use?');
+    a.campo('Volumen previsto', hay
+      ? d.dataset.map(function (c) {
+          return c.dataset_id.identifier + ': ' + (c.x_volumen || 'sin estimar');
+        }).join('. ')
+      : '');
+
+    a.pregunta('What is the origin / provenance of the data, either generated or re-used?');
+    porConjunto(function (c) {
+      return [etiqueta(M.ORIGEN, c.x_origen), c.x_sistema].filter(Boolean).join('. ');
+    });
+
+    a.pregunta('Will you re-use any existing data and what will you re-use it for? State the reasons if re-use of any existing data has been considered but discarded.');
+    var reut = d.dataset.filter(function (c) {
+      return ['reutilizado', 'cedido', 'asistencial'].indexOf(c.x_origen) >= 0;
+    });
+    if (!reut.length) {
+      a.parrafo('El proyecto no reutiliza datos preexistentes: los conjuntos se recogen de nuevo o se derivan de los recogidos.');
+    } else {
+      reut.forEach(function (c) {
+        a.campo(c.dataset_id.identifier + ' · ' + (c.title || ''),
+          etiqueta(M.ORIGEN, c.x_origen) + (c.x_sistema ? '. Procedencia: ' + c.x_sistema + '.' : '') +
+          (c.description ? ' ' + c.description : ''));
       });
     }
 
-    /* --- FAIR data --- */
-    a.seccion('FAIR data', 'Datos localizables, accesibles, interoperables y reutilizables');
+    a.pregunta("To whom might your data be useful ('data utility'), outside your project?");
+    porConjunto(function (c) { return c.x_utilidad; });
+
+    /* ---------------- FAIR data ---------------- */
+    a.seccion('FAIR data');
 
     a.sub('Making data findable, including provisions for metadata');
+    a.pregunta('Will data be identified by a persistent identifier?');
+    a.parrafo('El identificador permanente lo asigna el repositorio en el momento del depósito. El repositorio previsto de cada conjunto figura bajo «Making data accessible».');
+    a.pregunta('Will rich metadata be provided to allow discovery? What metadata will be created? What disciplinary or general standards will be followed?');
     a.campo('Esquema de metadatos previsto', x.x_esquema);
-    if (d.dataset.length) {
+    a.pregunta('Will search keywords be provided in the metadata to optimize the possibility for discovery and then potential re-use?');
+    if (hay) {
       a.tabla(['Id', 'Conjunto', 'Términos de búsqueda'],
         d.dataset.map(function (c) {
           return [c.dataset_id.identifier, c.title || 'sin nombre',
             (c.keyword || []).join(', ') || 'sin palabras clave'];
-        }), [7, 38, 55]);
-    }
-    a.nota('El identificador permanente lo asigna el repositorio en el momento del depósito.');
+        }), [7, 36, 57]);
+    } else { a.pendiente('No hay conjuntos declarados.'); }
 
     a.sub('Making data accessible');
-    if (d.dataset.length) {
+    a.pregunta('Will all data be made openly available? If certain datasets cannot be shared, explain why, clearly separating legal and contractual reasons from intentional restrictions.');
+    if (hay) {
       a.tabla(['Id', 'Conjunto', 'Acceso', 'Repositorio'],
         d.dataset.map(function (c) {
           return [c.dataset_id.identifier, c.title || 'sin nombre',
             etiqueta(M.DESTINO, c.x_destino) || 'sin decidir', c.x_repositorio || '—'];
-        }), [7, 36, 26, 31]);
+        }), [7, 34, 26, 33]);
       var cerrados = d.dataset.filter(function (c) { return c.x_destino && c.x_destino !== 'open'; });
       if (cerrados.length) {
-        a.sub('Justificación de los conjuntos que no son abiertos');
         cerrados.forEach(function (c) {
-          a.campo(c.dataset_id.identifier + ' · ' + (c.title || ''), c.x_justificacion);
+          a.campo('Motivo de la restricción · ' + c.dataset_id.identifier, c.x_justificacion);
         });
       }
-    }
+    } else { a.pendiente('No hay conjuntos declarados.'); }
+
+    a.pregunta('Will the data be deposited in a trusted repository? Does the repository ensure that the data is assigned an identifier?');
+    porConjunto(function (c) { return c.x_repositorio; });
+
+    a.pregunta('If there are restrictions on use, how will access be provided to the data, both during and after the end of the project? How will the identity of the person accessing the data be ascertained? Is there a need for a data access committee?');
     a.campo('Procedimiento de acceso controlado', x.x_procedimiento);
 
-    a.sub('Making data interoperable');
-    if (d.dataset.length) {
-      d.dataset.forEach(function (c) {
-        a.campo(c.dataset_id.identifier + ' · formato y vocabularios',
-          [c.x_formato, c.x_vocabularios].filter(Boolean).join('. '), { omitirVacio: true });
-      });
-    }
+    a.pregunta('If an embargo is applied to give time to publish or seek protection of the intellectual property, specify why and how long this will apply.');
+    a.pendiente('El editor todavía no recoge el embargo.');
 
-    a.sub('Increase data re-use');
-    if (d.dataset.length) {
-      d.dataset.forEach(function (c) {
-        var v = [c.x_diccionario, c.data_quality_assurance,
-          c.x_licencia ? 'Licencia: ' + c.x_licencia : ''].filter(Boolean).join('. ');
-        a.campo(c.dataset_id.identifier + ' · documentación, calidad y licencia', v, { omitirVacio: true });
-      });
-    }
-    a.campo('Declaración de disponibilidad prevista', x.x_disponibilidad);
-
-    /* --- Other research outputs --- */
-    a.seccion('Other research outputs', 'Otros resultados de investigación');
-    a.pendiente('Software, código, protocolos, modelos y muestras. Estos apartados todavía no tienen campos en el editor.');
-
-    /* --- Allocation of resources --- */
-    a.seccion('Allocation of resources', 'Asignación de recursos');
-    a.pendiente('Costes, cómo se cubren y quién responde de la gestión de datos. Todavía sin campos en el editor.');
-    if (d.dataset.length) {
-      a.sub('Preservación a largo plazo');
+    a.pregunta('How long will the data remain available and findable? Will metadata be guaranteed to remain available after data is no longer available?');
+    if (hay) {
       a.tabla(['Id', 'Conjunto', 'Plazo', 'Lo fija'],
         d.dataset.map(function (c) {
           return [c.dataset_id.identifier, c.title || 'sin nombre',
             c.x_plazo || 'sin decidir', c.x_plazo_norma || '—'];
         }), [7, 33, 28, 32]);
-    }
+    } else { a.pendiente('No hay conjuntos declarados.'); }
 
-    /* --- Data security --- */
+    a.sub('Making data interoperable');
+    a.pregunta('What data and metadata vocabularies, standards, formats or methodologies will you follow to make your data interoperable to allow data exchange and re-use within and across disciplines?');
+    porConjunto(function (c) {
+      return [c.x_formato, c.x_vocabularios].filter(Boolean).join('. ');
+    });
+
+    a.sub('Increase data re-use');
+    a.pregunta('How will you provide documentation needed to validate data analysis and facilitate data re-use (readme files, codebooks, data cleaning, variable definitions, units of measurement)?');
+    porConjunto(function (c) { return c.x_diccionario; });
+    a.pregunta('Will your data be licensed using standard reuse licenses, in line with the obligations set out in the Grant Agreement?');
+    porConjunto(function (c) { return c.x_licencia; }, 'Sin licencia decidida para ningún conjunto.');
+    a.pregunta('Describe all relevant data quality assurance processes.');
+    porConjunto(function (c) { return c.data_quality_assurance; });
+    a.pregunta('Will the provenance of the data be thoroughly documented using the appropriate standards?');
+    a.campo('Convención de nombres y versiones', x.x_nombrado);
+
+    /* ---------------- Other research outputs ---------------- */
+    a.seccion('Other research outputs', 'Otros resultados de investigación');
+    a.pregunta('Beneficiaries should consider which of the questions pertaining to FAIR data above can apply to the management of other research outputs, digital (software, workflows, protocols, models) or physical (materials, antibodies, reagents, samples).');
+    a.pendiente('El editor todavía no recoge software, protocolos, modelos ni muestras biológicas.');
+
+    /* ---------------- Allocation of resources ---------------- */
+    a.seccion('Allocation of resources', 'Asignación de recursos');
+    a.pregunta('What will the costs be for making data or other research outputs FAIR in your project? How will these be covered?');
+    a.pendiente('El editor todavía no recoge costes ni partidas.');
+    a.pregunta('Who will be responsible for data management in your project?');
+    a.campo('Responsable del plan', [d.contact.name, d.contact.mbox].filter(Boolean).join(' · '));
+    porConjunto(function (c) { return c.x_responsable; }, 'Sin responsable nombrado por conjunto.');
+    a.pregunta('How will long term preservation be ensured? What data will be kept and for how long?');
+    a.campo('Bloqueo', x.x_bloqueo);
+    a.campo('Disposición final', x.x_borrado);
+
+    /* ---------------- Data security ---------------- */
     a.seccion('Data security', 'Seguridad de los datos');
-    if (d.dataset.length) {
+    a.pregunta('What provisions are or will be in place for data security, including data recovery as well as secure storage / archiving and transfer of sensitive data?');
+    if (hay) {
       a.tabla(['Id', 'Conjunto', 'Dónde reside', 'Administra'],
         d.dataset.map(function (c) {
           return [c.dataset_id.identifier, c.title || 'sin nombre',
             c.x_emplazamiento || 'sin decidir', c.x_administra || '—'];
-        }), [7, 33, 34, 26]);
-      a.sub('Copias de seguridad y recuperación');
-      d.dataset.forEach(function (c) {
-        a.campo(c.dataset_id.identifier, c.x_respaldo, { omitirVacio: true });
-      });
-    }
+        }), [7, 32, 35, 26]);
+    } else { a.pendiente('No hay conjuntos declarados.'); }
+    porConjunto(function (c) { return c.x_respaldo; }, 'Sin respaldo declarado.');
     a.campo('Transferencia de datos fuera de su sistema', x.x_transferencia);
     a.campo('Medios que no se utilizarán', x.x_no_usar);
-    a.sub('Bloqueo y disposición final');
-    a.campo('Bloqueo', x.x_bloqueo);
-    a.campo('Borrado seguro', x.x_borrado);
 
-    /* --- Ethics --- */
+    /* ---------------- Ethics ---------------- */
     a.seccion('Ethics', 'Ética y cuestiones legales');
-    a.pendiente('Base legal de cada tratamiento, consentimiento, cesiones y encargados. Todavía sin campos en el editor.');
-    if (d.dataset.length) {
-      a.sub('Datos personales y sensibles por conjunto');
+    a.pregunta('Are there, or could there be, any ethics or legal issues that can have an impact on data sharing?');
+    if (hay) {
       a.tabla(['Id', 'Conjunto', 'Personales', 'Cat. especial', 'Identificabilidad'],
         d.dataset.map(function (c) {
           return [c.dataset_id.identifier, c.title || 'sin nombre',
             tresT(c.personal_data), tresT(c.sensitive_data),
             etiqueta(M.IDENTIFICABILIDAD, c.x_identificabilidad) || '—'];
-        }), [7, 28, 16, 17, 32]);
-    }
+        }), [7, 26, 16, 17, 34]);
+      porConjunto(function (c) { return c.x_seudonimizacion; }, 'Sin declarar la custodia de la clave.');
+    } else { a.pendiente('No hay conjuntos declarados.'); }
+    a.pregunta('Will informed consent for data sharing and long term preservation be included in questionnaires dealing with personal data?');
+    a.pendiente('El editor todavía no recoge el apartado de marco legal y consentimiento.');
 
-    /* --- Other issues --- */
+    /* ---------------- Other issues ---------------- */
     a.seccion('Other issues', 'Otras cuestiones');
-    a.parrafo('¿Se acoge el proyecto a otros procedimientos de gestión de datos, nacionales, del financiador, sectoriales o del departamento?');
+    a.pregunta('Do you, or will you, make use of other national / funder / sectorial / departmental procedures for data management? If yes, which ones?');
     a.campo('Procedimientos aplicables', x.institucion
-      ? 'Los que establezca la política de datos de ' + x.institucion + '.'
+      ? 'Los que establezca la política de gestión de datos de ' + x.institucion + '.'
       : '');
   }
 
