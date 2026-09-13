@@ -1,12 +1,11 @@
-# Editor de planes de gestión de datos · maqueta
+# Editor de planes de gestión de datos
 
-Maqueta de trabajo del editor de PGD que acompaña al curso C1.
+Redacta un plan de gestión de datos y lo exporta al formato de la Comisión
+Europea, con el propio plan incorporado dentro del PDF para poder retomarlo.
 
-Cubre los apartados 0, 1, 2, 5, 7, 8 y 9 de la plantilla del curso. Quedan
-pendientes los de muestras biológicas, otros resultados, marco legal y
-responsabilidades, que están en el índice y explican qué irá en ellos. La
-**estructura de los conjuntos** —qué tablas hay, qué representa una fila, cómo
-se enlazan— queda deliberadamente fuera por ahora.
+Los once apartados tienen campos. La **estructura de los conjuntos** —qué
+tablas hay, qué representa una fila, cómo se enlazan— queda deliberadamente
+fuera por ahora.
 
 ## Probarla ahora mismo
 
@@ -14,8 +13,7 @@ se enlazan— queda deliberadamente fuera por ahora.
 open src/index.html
 ```
 
-Funciona con doble clic, sin instalar nada y sin conexión. Es la misma forma de
-distribución que el ZIP de revisión del curso.
+Funciona con doble clic, sin instalar nada y sin conexión.
 
 > Si el navegador bloquea algo al abrir desde `file://`, se sirve en local con
 > `npm run web` y se abre `http://localhost:8080`.
@@ -27,17 +25,26 @@ sin plegar: nada queda escondido tras un triángulo. Los apartados se agrupan po
 la pregunta que responden —*qué datos hay*, *dónde viven*, *con quién*— y cada
 uno lleva un punto de estado.
 
-**El orden es el de las decisiones, no el de las letras FAIR**, igual que la
-plantilla del curso y por el mismo motivo que argumenta D8·01: nadie se sienta a
-decidir «cómo hago mis datos interoperables», sino qué formato usa y con qué
-codifica los diagnósticos. La estructura de la Comisión Europea se obtendrá al
+**El orden es el de las decisiones, no el de las letras FAIR**: nadie se sienta
+a decidir «cómo hago mis datos interoperables», sino qué formato usa y con qué
+codifica los diagnósticos. La estructura de la Comisión Europea se obtiene al
 exportar.
+
+**Cada grupo del índice lleva un tono**, y ese mismo color aparece en el filo
+del apartado seleccionado y en la cejilla que encabeza el panel. Es lo único
+que dice, sin leer nada, en qué parte del documento se está trabajando; el
+resto de la pantalla es gris, y el verde sigue significando «esto se puede
+pulsar».
 
 **No hay botón de guardar.** Se guarda solo mientras se escribe. El botón que sí
 existe es *exportar*, porque exportar sí es una decisión que toma una persona.
 
 **Lo que falta sale donde se arregla**, al pie de cada apartado, y agrupado en
 la sección final de revisión. Nunca como una pantalla de errores al final.
+
+**La columna de lectura la fija el relleno del panel**, no un margen automático
+en cada bloque: cualquier regla con `margin` abreviado lo anula sin avisar, y
+eso es lo que dejaba unos bloques centrados y otros pegados al borde.
 
 ## Lo que se decide por conjunto, y por qué importa
 
@@ -50,9 +57,14 @@ Cada uno de esos apartados tiene la misma forma: los campos de proyecto arriba,
 después **una tabla que pone a todos los conjuntos juntos**, y debajo un bloque
 plegable por conjunto para rellenarlos.
 
-La tabla no es decoración. La tesis del curso es que las columnas no coinciden
-—en PREVIA, CD2 no se comparte y CD7 es abierto—, y eso solo se ve poniéndolas
-una al lado de otra. Un formulario por conjunto lo escondería.
+La tabla no es decoración: las columnas no coinciden —en PREVIA, CD2 no se
+comparte y CD7 es abierto—, y eso solo se ve poniéndolas una al lado de otra.
+Un formulario por conjunto lo escondería.
+
+Los apartados que no se deciden por conjunto —muestras biológicas, otros
+resultados— tienen solo la parte de proyecto, y en muestras la primera
+pregunta apaga las demás: un proyecto que no maneja ninguna lo declara y el
+apartado queda resuelto.
 
 ## La ficha de un conjunto, por niveles
 
@@ -70,21 +82,23 @@ más segura de que no se rellene ninguno. Van en cuatro niveles, y cada uno dice
 La ficha describe **qué es** el conjunto. **Qué se hace con él** se decide en los
 apartados 7, 8 y 9, por lo dicho arriba.
 
-## Coherencia con el curso
+## Lo que la aplicación comprueba
 
-No es un adorno: si la app y el curso dicen cosas distintas, el curso pierde.
+Las comprobaciones que cruzan apartados son las que de verdad valen: cada
+apartado por separado puede parecer correcto y contradecir al de al lado.
 
-- Cada apartado remite a la unidad didáctica que lo explica.
-- Las palabras son las del curso: *conjunto de datos*, no *dataset*; la escala de
-  identificabilidad de D6·02; los tres destinos de D13·01, que son los tres
-  valores de `data_access` del estándar.
-- Las palabras que el criterio de suficiencia persigue —*adecuado*, *apropiado*,
-  *pertinente*, *vigente*, *necesario*, *periódico*— son las mismas que enumera
-  D15·03.
-- Al marcar un conjunto como **anónimo**, la app recuerda que si existe la clave
-  en algún sitio es seudonimizado. Al marcarlo **no personal**, que agregar no es
-  un peldaño de la escala y hay que decir qué se comprobó. Al marcarlo **no se
-  comparte**, pregunta si no hay una versión que sí.
+- Un conjunto **abierto** que sigue siendo dato personal: o se anonimiza de
+  verdad, o el destino es acceso controlado.
+- Un conjunto de **origen asistencial** amparado en el consentimiento del
+  proyecto, que rara vez lo cubre.
+- Un conjunto con datos personales **sin base legal** declarada.
+- Las palabras que no comprometen a nada —*adecuado*, *apropiado*,
+  *pertinente*, *vigente*, *necesario*, *periódico*— allí donde aparecen.
+
+Y al escribir: marcar un conjunto como **anónimo** recuerda que si existe la
+clave en algún sitio es seudonimizado; marcarlo **no personal**, que agregar no
+es un peldaño de la escala y hay que decir qué se comprobó; marcarlo **no se
+comparte**, pregunta si no hay una versión que sí.
 
 ## El PDF es el formato de archivo
 
@@ -114,7 +128,7 @@ con prefijo, para que el JSON siga siendo reconocible por cualquier herramienta
 que hable RDA.
 
 De los campos que el estándar marca como obligatorios en un `dataset`, la
-maqueta ya pide los cuatro: identificador, título, si contiene datos personales
+aplicación pide los cuatro: identificador, título, si contiene datos personales
 y si contiene datos sensibles. Los dos últimos admiten «todavía no lo sé», que
 es un valor del propio estándar y una respuesta legítima mientras no se haya
 averiguado.
@@ -128,7 +142,7 @@ conjunto en todo el documento.
 ```
 src/
   index.html     la pantalla
-  app.css        un tema, claro y oscuro, con los tokens del curso
+  app.css        el tema, claro y oscuro, con un tono por grupo del índice
   modelo.js      el modelo RDA, los identificadores y las comprobaciones
   pdf.js         exportar a PDF e importar de vuelta
   app.js         la aplicación
@@ -166,21 +180,27 @@ posición y conviene sustituirlos.
 
 Para distribuir fuera de la máquina donde se compila hace falta además firmar y
 notarizar, que requiere cuenta de desarrollador de Apple. Mientras eso no esté,
-la vía de reparto es la misma que la del curso: la carpeta `src/` abierta con
-doble clic.
+la vía de reparto es la carpeta `src/` abierta con doble clic.
+
+## El volcado a la plantilla europea
+
+`src/preguntas-ec.js` **se genera leyendo el DOCX oficial de la Comisión**, no
+se transcribe. Son 42 indicaciones con identificador estable, y el exportador
+las recorre imprimiendo debajo lo que el plan responde. Las 42 tienen
+respuesta; si la Comisión revisa la plantilla, se vuelve a generar el fichero y
+se ve enseguida qué identificadores han cambiado.
+
+Los apartados se citan **por su título y nunca por su número**, porque la
+Comisión los renumera al revisar la plantilla.
 
 ## Lo que falta, por orden de utilidad
 
-1. **Exportar al formato de la Comisión Europea**, respondiendo a sus apartados
-   por título y no por número, porque la Comisión los renumera al revisar la
-   plantilla. Un exportador por plantilla, sin tocar el modelo.
-2. **Los cuatro apartados que quedan**: muestras biológicas, otros resultados,
-   marco legal y responsabilidades. El legal es mixto, como los cuatro de arriba.
-3. **Las comprobaciones que cruzan apartados**, que son las que más valen: que lo
-   prometido en compartición sea compatible con lo declarado en el marco legal.
-4. **El PDF con los apartados nuevos**: ahora solo imprime identificación,
-   resumen y conjuntos.
-5. **Estructura y granularidad**, que es lo que esta versión deja fuera.
+1. **Estructura y granularidad** de cada conjunto: qué tablas hay, qué
+   representa una fila, cómo se enlazan.
+2. **Más comprobaciones cruzadas**: plazos de conservación incompatibles entre
+   conjuntos que se unen, repositorios que no admiten lo que se les promete.
+3. **Otras plantillas**, si hacen falta: un exportador y un fichero de
+   correspondencias por cada una.
 
 La regla que conviene no romper: cada plantilla nueva es **un exportador y un
 fichero de correspondencias**. Si un campo propio de una plantilla concreta

@@ -139,6 +139,30 @@
     { v: 'closed', t: 'No se comparte' }
   ];
 
+  var SI_NO = [
+    { v: '', t: '— sin responder —' },
+    { v: 'si', t: 'Sí' },
+    { v: 'no', t: 'No' }
+  ];
+
+  /* Las cuatro vías que habilitan un tratamiento en investigación
+     biomédica. No son alternativas de estilo: cada una arrastra sus
+     propias obligaciones y su propio alcance. */
+  var BASE_LEGAL = [
+    { v: '', t: '— sin decidir —' },
+    { v: 'consentimiento', t: 'Consentimiento informado' },
+    { v: 'interes-publico', t: 'Interés público en el ámbito de la salud' },
+    { v: 'obligacion', t: 'Obligación legal o ejercicio de poderes públicos' },
+    { v: 'no-personal', t: 'No procede: no son datos personales' }
+  ];
+
+  var EIPD = [
+    { v: '', t: '— sin decidir —' },
+    { v: 'no', t: 'No procede, y consta por qué' },
+    { v: 'pendiente', t: 'Procede, pendiente de realizar' },
+    { v: 'hecha', t: 'Realizada' }
+  ];
+
   function conjuntoNuevo(doc) {
     return {
       dataset_id: { type: 'other', identifier: siguienteId(doc) },
@@ -165,6 +189,8 @@
          en singular. */
       x_diccionario: '',
       x_vocabularios: '',
+      x_base_legal: '',
+      x_alcance: '',
       x_emplazamiento: '',
       x_administra: '',
       x_respaldo: '',
@@ -177,18 +203,30 @@
     };
   }
 
-  /* --- Los apartados que se deciden conjunto por conjunto -------------
-     Cada uno tiene campos de proyecto y campos de conjunto. La tabla
-     resumen de arriba existe para que las diferencias entre conjuntos
-     se vean juntas: es lo que hace imposible decidir en bloque sin
-     darse cuenta.                                                     */
+  /* --- Los apartados con campos ----------------------------------------
+     Cada uno declara sus campos de proyecto y, si procede, sus campos
+     de conjunto. Los que tienen campos de conjunto muestran además una
+     tabla que pone a todos los conjuntos juntos: es lo que hace visible
+     que las decisiones no coinciden, y lo que impide decidir en bloque
+     sin darse cuenta.
+
+     Un campo puede llevar `si`, y entonces solo aparece cuando otro
+     campo tiene un valor determinado. Se usa para no pedir seis cosas
+     sobre muestras biológicas a un proyecto que no maneja ninguna.    */
   var TEMAS = {
     documentacion: {
+      pista: 'Este apartado responde a una sola pregunta: si alguien ajeno al proyecto recibiera estos datos, ¿podría interpretarlos? La convención de nombres es del proyecto; el diccionario de variables y los vocabularios, de cada conjunto.',
       proyecto: [
         { k: 'x_nombrado', req: 'recomendado', et: 'Convención de nombres y versiones de fichero', tipo: 'textarea',
           ayuda: 'Cualquier convención declarada es preferible a ninguna. Una habitual es proyecto_conjunto_versión_fecha, con la fecha en formato año-mes-día, que ordena correctamente por orden alfabético.' },
         { k: 'x_esquema', req: 'recomendado', et: 'Esquema de metadatos del depósito', tipo: 'text',
-          ayuda: 'Lo impone en gran medida el repositorio. Basta con decir cuál se prevé.' }
+          ayuda: 'Lo impone en gran medida el repositorio. Basta con decir cuál se prevé.' },
+        { k: 'x_software_lectura', req: 'recomendado', et: 'Software necesario para leer los datos', tipo: 'textarea',
+          ayuda: 'Si para abrir o interpretar un conjunto hace falta un programa concreto —un visor de imagen médica, un paquete estadístico, un guion de lectura—, conviene decir cuál, en qué versión y si se depositará junto a los datos. Si bastan herramientas corrientes, también conviene hacerlo constar.' },
+        { k: 'x_ontologias', req: 'recomendado', et: 'Vocabularios propios, si los hay', tipo: 'textarea',
+          ayuda: 'Solo cuando una variable no admite ningún catálogo existente y hay que definir uno del proyecto. Lo que se pide entonces es a qué vocabulario común se corresponde y si se publicará para que otros puedan reutilizarlo.' },
+        { k: 'x_referencias', req: 'recomendado', et: 'Enlaces con otros conjuntos de datos', tipo: 'textarea',
+          ayuda: 'Si estos datos se relacionan con otros —de un proyecto anterior, de un registro externo, de un consorcio—, con cuáles y por qué variable se enlazan. Si no se relacionan con ninguno, conviene decirlo.' }
       ],
       conjunto: [
         { k: 'x_diccionario', req: 'recomendado', et: 'Diccionario de variables', tipo: 'textarea',
@@ -199,6 +237,7 @@
       columnas: [{ k: 'x_diccionario', et: 'Diccionario' }]
     },
     almacenamiento: {
+      pista: 'Un proyecto ordinario mantiene datos en tres emplazamientos simultáneos: el sistema de captura, el espacio de trabajo y el entorno de análisis. Declarar solo el primero deja fuera copias que suelen estar peor protegidas.',
       proyecto: [
         { k: 'x_no_usar', req: 'recomendado', et: 'Qué no se usará', tipo: 'textarea',
           ayuda: 'Nube personal, correo electrónico, dispositivos sin cifrar, herramientas en línea no autorizadas y asistentes de inteligencia artificial de uso general. Conviene indicar junto a cada exclusión la alternativa prevista: una restricción sin alternativa no se cumple.' },
@@ -215,6 +254,7 @@
       columnas: [{ k: 'x_emplazamiento', et: 'Sistema' }, { k: 'x_administra', et: 'Administra' }]
     },
     conservacion: {
+      pista: 'Sobre los mismos datos concurren obligaciones de origen distinto, cada una con su propio plazo. Cuando varias normas fijan plazos diferentes rige el más largo: cumplir el más corto no exime del otro.',
       proyecto: [
         { k: 'x_bloqueo', req: 'recomendado', et: 'Bloqueo', tipo: 'textarea',
           ayuda: 'El estado intermedio entre «los estoy usando» y «ya no existen»: conservar impidiendo cualquier tratamiento salvo su puesta a disposición de jueces o administraciones. Cuánto dura, dónde residen y quién puede levantarlo, que no debería ser el equipo investigador.' },
@@ -230,9 +270,14 @@
       columnas: [{ k: 'x_plazo', et: 'Plazo' }, { k: 'x_plazo_norma', et: 'Lo fija' }]
     },
     comparticion: {
+      pista: 'Tres destinos posibles, que no constituyen una escala de mejor a peor. Un proyecto rara vez tiene un destino único, y suponerlo lleva a aplicar a todos los conjuntos el régimen del más restringido.',
       proyecto: [
         { k: 'x_procedimiento', req: 'recomendado', et: 'Procedimiento de acceso controlado', tipo: 'textarea',
           ayuda: 'Quién autoriza las solicitudes, con qué criterios publicados y bajo qué acuerdo. Y qué pasa cuando el proyecto termine: un procedimiento que depende de una persona caduca con ella.' },
+        { k: 'x_gestiones', req: 'recomendado', et: 'Gestiones ya hechas con el repositorio', tipo: 'textarea',
+          ayuda: 'Si se ha consultado que admita el volumen, el tipo de dato y el acceso restringido, y qué contestaron. Es la diferencia entre haber elegido un repositorio y haberlo supuesto.' },
+        { k: 'x_embargo', req: 'recomendado', et: 'Embargo, si se aplica', tipo: 'textarea',
+          ayuda: 'Cuánto dura, desde qué fecha cuenta y qué lo motiva: una publicación en curso o una solicitud de patente. Si no hay embargo, conviene decirlo expresamente en lugar de dejar el punto en blanco.' },
         { k: 'x_disponibilidad', req: 'recomendado', et: 'Declaración de disponibilidad prevista', tipo: 'textarea',
           ayuda: 'El párrafo que pedirá la revista. Dejarlo redactado evita improvisarlo el día del envío, que es cuando aparece la fórmula de «disponible bajo petición al autor».' }
       ],
@@ -247,8 +292,112 @@
           ayuda: 'En acceso controlado la licencia no es lo que gobierna: gobierna el acuerdo de uso que firma quien solicita.' }
       ],
       columnas: [{ k: 'x_destino', et: 'Destino', opciones: 'DESTINO' }, { k: 'x_repositorio', et: 'Repositorio' }]
+    },
+
+    muestras: {
+      pista: 'Una muestra no es un dato, pero casi siempre lleva uno pegado. El apartado existe por eso: mientras exista el vínculo entre el tubo y la fila, lo que se decida sobre las muestras condiciona lo que se puede decidir sobre los datos.',
+      proyecto: [
+        { k: 'x_muestras_hay', req: 'obligatorio', et: '¿El proyecto maneja muestras biológicas?', tipo: 'select', opciones: 'SI_NO',
+          ayuda: 'Sangre, tejido, orina, saliva y cualquier material derivado, tanto recogido de nuevo como cedido por un biobanco o procedente del sobrante de una determinación asistencial. Si no hay ninguna, se declara aquí y el apartado queda resuelto.' },
+        { k: 'x_muestras_tipos', si: { k: 'x_muestras_hay', v: 'si' }, req: 'obligatorio',
+          et: 'Qué muestras, de cuántos sujetos y en qué momentos', tipo: 'textarea',
+          ejemplo: 'Suero y ADN de 300 sujetos, en la visita basal y a los doce meses.',
+          ayuda: 'Tipo de material, número aproximado de sujetos y alícuotas, y en qué visitas se obtiene. Es lo que permite dimensionar la conservación y el coste.' },
+        { k: 'x_muestras_consentimiento', si: { k: 'x_muestras_hay', v: 'si' }, req: 'obligatorio',
+          et: 'Qué ampara su obtención y su uso', tipo: 'textarea',
+          ayuda: 'El consentimiento específico del proyecto, un consentimiento previo de biobanco o la exención que corresponda. Importa sobre todo el alcance: si cubre solo este análisis, si cubre usos futuros relacionados y si cubre la cesión a terceros. Un consentimiento que no menciona los usos futuros impide reutilizar las muestras aunque nadie se oponga.' },
+        { k: 'x_muestras_vinculo', si: { k: 'x_muestras_hay', v: 'si' }, req: 'obligatorio',
+          et: 'Quién custodia el vínculo entre la muestra y el dato', tipo: 'text',
+          ayuda: 'Una muestra codificada sigue siendo dato personal mientras alguien pueda volver al sujeto. Aquí se dice quién puede, y conviene que no sea el mismo equipo que analiza.' },
+        { k: 'x_muestras_lugar', si: { k: 'x_muestras_hay', v: 'si' }, req: 'recomendado',
+          et: 'Dónde se conservan y en qué condiciones', tipo: 'text',
+          ejemplo: 'Biobanco del instituto, congeladores a -80 °C con registro de temperatura.',
+          ayuda: 'El emplazamiento concreto y quién responde de él. Si es un biobanco registrado, conviene nombrarlo: es lo que da trazabilidad a la custodia.' },
+        { k: 'x_muestras_destino', si: { k: 'x_muestras_hay', v: 'si' }, req: 'obligatorio',
+          et: 'Destino al terminar el proyecto', tipo: 'textarea',
+          ayuda: 'Destrucción con acta, incorporación a una colección o a un biobanco, o cesión. Son las tres únicas salidas, y la que no se decide ahora acaba siendo un congelador que nadie se atreve a vaciar.' }
+      ],
+      conjunto: [],
+      columnas: []
+    },
+
+    otros: {
+      pista: 'La Comisión pregunta expresamente por los resultados que no son datos. Casi siempre se pueden publicar en abierto sin restricción legal alguna, de modo que son la vía más accesible a la ciencia abierta para un proyecto cuyos datos están restringidos.',
+      proyecto: [
+        { k: 'x_software', req: 'recomendado', et: 'Software y código de análisis', tipo: 'textarea',
+          ejemplo: 'Guiones de depuración y análisis en R, con el fichero de entorno que fija las versiones de los paquetes.',
+          ayuda: 'Qué se programa dentro del proyecto y qué hace. Depositarlo es lo que convierte un resultado en reproducible, y no exige liberar ningún dato.' },
+        { k: 'x_protocolos', req: 'recomendado', et: 'Protocolos y procedimientos', tipo: 'textarea',
+          ayuda: 'Protocolos de recogida, procedimientos normalizados de trabajo, cuestionarios y escalas propias. Se publican con identificador permanente y se citan igual que un artículo.' },
+        { k: 'x_materiales', req: 'recomendado', et: 'Materiales y otros resultados físicos', tipo: 'textarea',
+          ayuda: 'Modelos, líneas celulares, anticuerpos, reactivos o cualquier material que otro equipo pudiera pedir. Si no hay ninguno, conviene hacerlo constar.' },
+        { k: 'x_otros_deposito', req: 'recomendado', et: 'Dónde se depositarán', tipo: 'text',
+          ejemplo: 'Repositorio de código con archivo permanente que asigne DOI a cada versión publicada.',
+          ayuda: 'Un repositorio de código no basta por sí solo: hace falta que la versión publicada quede archivada con identificador permanente, porque una rama se puede reescribir.' },
+        { k: 'x_otros_licencia', req: 'recomendado', et: 'Con qué licencia', tipo: 'text',
+          ejemplo: 'MIT para el código, CC BY 4.0 para los protocolos.',
+          ayuda: 'El código lleva licencia de software y los documentos licencia de contenido: no es la misma, y usar una sola para todo deja una de las dos cosas sin condiciones de uso claras.' }
+      ],
+      conjunto: [],
+      columnas: []
+    },
+
+    legal: {
+      pista: 'Lo que habilita el tratamiento no es único para todo el proyecto: un conjunto recogido con consentimiento y otro extraído de la historia clínica se apoyan en bases distintas y admiten usos distintos. Por eso este apartado tiene una parte de proyecto y otra de cada conjunto.',
+      proyecto: [
+        { k: 'x_comite', req: 'obligatorio', et: 'Comité de ética y referencia del dictamen', tipo: 'text',
+          ejemplo: 'Comité de Ética de la Investigación del centro, dictamen favorable de 12/03/2026, referencia 041/2026.',
+          ayuda: 'El nombre del comité, la fecha del dictamen y su referencia. Es el dato que permite comprobar que la aprobación existe, y el que se pide en cuanto el proyecto se audita.' },
+        { k: 'x_consentimiento', req: 'obligatorio', et: 'Qué cubre el consentimiento y qué no', tipo: 'textarea',
+          ayuda: 'Lo decisivo no es que exista, sino su alcance: si cubre la conservación a largo plazo, la compartición con otros equipos y los usos futuros relacionados. Si no los menciona, el plan no puede prometerlos, y ese es el choque que aparece cuando la revista pide los datos.' },
+        { k: 'x_eipd', req: 'recomendado', et: 'Evaluación de impacto en protección de datos', tipo: 'select', opciones: 'EIPD',
+          ayuda: 'Un tratamiento a gran escala de datos de salud la exige. Cuando no procede, lo que se pide es que conste el motivo, no que se omita el punto.' },
+        { k: 'x_cesiones', req: 'recomendado', et: 'Cesiones a terceros y encargados de tratamiento', tipo: 'textarea',
+          ayuda: 'Quién más va a tratar estos datos: un laboratorio externo, un centro colaborador, un proveedor de servicios en la nube. Cada uno necesita su contrato, y conviene decir cuál lo cubre. El proveedor que trata datos sin contrato de encargo es el hallazgo más frecuente de una inspección.' },
+        { k: 'x_transferencias', req: 'recomendado', et: 'Transferencias fuera del Espacio Económico Europeo', tipo: 'textarea',
+          ayuda: 'Si las hay, a qué país y con qué garantía. Conviene revisar dónde están los servidores de las herramientas que ya se usan: muchas transferencias no se deciden, se heredan del programa que alguien instaló.' }
+      ],
+      conjunto: [
+        { k: 'x_base_legal', req: 'obligatorio', et: 'Base que habilita el tratamiento', tipo: 'select', opciones: 'BASE_LEGAL',
+          ayuda: 'En datos de salud hacen falta dos habilitaciones a la vez y no una: la del tratamiento y la que levanta la prohibición general sobre las categorías especiales. Un conjunto de origen asistencial no se ampara en el consentimiento del proyecto por el hecho de que el proyecto lo tenga.' },
+        { k: 'x_alcance', req: 'recomendado', et: 'Qué ampara ese permiso para este conjunto', tipo: 'textarea',
+          ayuda: 'Hasta dónde llega: el análisis previsto, la conservación posterior, la cesión a terceros, la publicación. Es lo que después tiene que coincidir con el destino declarado en Compartición y publicación; si no coincide, uno de los dos apartados está prometiendo algo que no puede cumplir.' }
+      ],
+      columnas: [{ k: 'x_base_legal', et: 'Base legal', opciones: 'BASE_LEGAL' }]
+    },
+
+    responsabilidades: {
+      pista: 'Todo lo decidido en los apartados anteriores cuesta tiempo y dinero de alguien. Aquí se dice de quién. Una tarea asignada a «el equipo investigador» es una tarea de nadie, y eso se descubre cuando no se ha hecho.',
+      proyecto: [
+        { k: 'x_reparto', req: 'obligatorio', et: 'Reparto de tareas, con nombres', tipo: 'textarea',
+          ejemplo: 'Depuración y control de calidad mensual: nombre y apellidos. Extracción y seudonimización: servicio de informática. Depósito final: nombre y apellidos.',
+          ayuda: 'Quién hace cada cosa: recoger, depurar, custodiar la clave, depositar, atender las solicitudes de acceso. Con nombres de personas o de servicios concretos.' },
+        { k: 'x_coste', req: 'obligatorio', et: 'Coste estimado y partidas', tipo: 'textarea',
+          ejemplo: 'Almacenamiento y respaldo institucional durante cinco años; tasa de depósito del repositorio; dedicación estimada de un mes de persona para depurar y documentar.',
+          ayuda: 'Los tres costes que existen de verdad: almacenamiento durante el proyecto, depósito y conservación después, y el tiempo de una persona en documentar. El tercero es el mayor y el que nunca se presupuesta. Basta con órdenes de magnitud.' },
+        { k: 'x_cobertura', req: 'recomendado', et: 'Con qué se cubre ese coste', tipo: 'text',
+          ayuda: 'Partida del proyecto, servicio incluido de la institución o financiación pendiente. Los costes de gestión de datos son elegibles dentro de la ayuda si se han previsto.' },
+        { k: 'x_relevo', req: 'recomendado', et: 'Qué ocurre si alguien deja el proyecto', tipo: 'textarea',
+          ayuda: 'En un proyecto de cinco años con personal en formación, alguien se irá. Lo que se pide es que las claves de acceso, los ficheros y la documentación no se vayan con esa persona.' },
+        { k: 'x_custodia_larga', req: 'obligatorio', et: 'Quién custodia los datos cuando el proyecto termina', tipo: 'text',
+          ayuda: 'Una unidad o un servicio que siga existiendo, no una persona. Es la pregunta que decide si el plan sobrevive al proyecto, y la que casi nunca tiene respuesta escrita.' }
+      ],
+      conjunto: [
+        { k: 'x_responsable', req: 'obligatorio', et: 'Persona responsable del conjunto', tipo: 'text',
+          ejemplo: 'Nombre y apellidos',
+          ayuda: 'Es el mismo campo que figura en la ficha del conjunto: lo que se escriba aquí aparece allí. A quién se pregunta por este conjunto en concreto, que no tiene por qué ser quien firma el plan.' }
+      ],
+      columnas: [{ k: 'x_responsable', et: 'Responsable' }]
     }
   };
+
+  /* Un campo con `si` solo aparece cuando otro campo tiene el valor que
+     pide. Lo usan a la vez el formulario, el estado del índice y el
+     volcado a PDF, para que los tres coincidan. */
+  function campoVisible(f, obj) {
+    if (!f.si) { return true; }
+    return String((obj && obj[f.si.k]) || '') === f.si.v;
+  }
 
   /* Cuántos campos de un nivel están puestos. Lo usa el detalle para
      decir, con el nivel cerrado, si hay algo dentro. */
@@ -271,49 +420,50 @@
      El índice no se escribe en el HTML: se genera de aquí, para que
      añadir un apartado sea añadir una fila.
 
-     El orden es el de la plantilla del curso, que va por decisiones y
-     no por letras FAIR. La estructura de la Comisión Europea se
-     obtiene al exportar, no al editar: así se escribe una vez y se
-     vuelca en el formulario que toque.                               */
+     El orden es el de las decisiones, no el de las letras FAIR: nadie
+     se sienta a decidir «cómo hago mis datos interoperables», sino qué
+     formato usa y con qué codifica los diagnósticos. La estructura de
+     la Comisión Europea se obtiene al exportar, no al editar: así se
+     escribe una vez y se vuelca en el formulario que toque.
+
+     Cada grupo lleva un tono, que es lo único que distingue de un
+     vistazo en qué parte del documento se está trabajando.           */
   var SECCIONES = [
-    { grupo: 'Documento', items: [
-      { id: 'portada', n: '0', titulo: 'Portada y control del documento', ud: 'D9·01' },
-      { id: 'resumen', n: '1', titulo: 'Resumen de la gestión de datos', ud: 'D9·02' }
+    { grupo: 'Documento', tono: 'documento', items: [
+      { id: 'portada', n: '0', titulo: 'Portada y control del documento' },
+      { id: 'resumen', n: '1', titulo: 'Resumen de la gestión de datos' }
     ]},
-    { grupo: 'Datos', items: [
-      { id: 'conjuntos', n: '2', titulo: 'Conjuntos de datos', hijos: true, ud: 'D9·03' },
-      { id: 'muestras', n: '3', titulo: 'Muestras biológicas', pendiente: 'D9·04',
-        adelanto: 'Solo si el proyecto maneja muestras. Qué muestras, con qué consentimiento, quién custodia el vínculo con el dato y cuál es su destino final.' },
-      { id: 'otros', n: '4', titulo: 'Otros resultados', pendiente: 'D9·05',
-        adelanto: 'Software, código de análisis, protocolos y modelos. Se pueden publicar en abierto sin restricción legal, y son la vía más accesible a la ciencia abierta para un proyecto con datos restringidos.' }
+    { grupo: 'Datos', tono: 'datos', items: [
+      { id: 'conjuntos', n: '2', titulo: 'Conjuntos de datos', hijos: true },
+      { id: 'muestras', n: '3', titulo: 'Muestras biológicas', tema: 'muestras' },
+      { id: 'otros', n: '4', titulo: 'Otros resultados', tema: 'otros' }
     ]},
-    { grupo: 'Documentación', items: [
-      { id: 'documentacion', n: '5', titulo: 'Documentación y metadatos', tema: 'documentacion', ud: 'D10' }
+    { grupo: 'Documentación', tono: 'documentacion', items: [
+      { id: 'documentacion', n: '5', titulo: 'Documentación y metadatos', tema: 'documentacion' }
     ]},
-    { grupo: 'Marco legal', items: [
-      { id: 'legal', n: '6', titulo: 'Marco legal y ético', pendiente: 'D11',
-        adelanto: 'Base legal de cada tratamiento, qué cubre el consentimiento y qué no, identificabilidad y custodia de la clave, cesiones y encargados.' }
+    { grupo: 'Marco legal', tono: 'legal', items: [
+      { id: 'legal', n: '6', titulo: 'Marco legal y ético', tema: 'legal' }
     ]},
-    { grupo: 'Custodia y conservación', items: [
-      { id: 'almacenamiento', n: '7', titulo: 'Almacenamiento, seguridad y acceso', tema: 'almacenamiento', ud: 'D12·01 a D12·04' },
-      { id: 'conservacion', n: '8', titulo: 'Conservación y disposición final', tema: 'conservacion', ud: 'D12·05 y D12·06' }
+    { grupo: 'Custodia y conservación', tono: 'custodia', items: [
+      { id: 'almacenamiento', n: '7', titulo: 'Almacenamiento, seguridad y acceso', tema: 'almacenamiento' },
+      { id: 'conservacion', n: '8', titulo: 'Conservación y disposición final', tema: 'conservacion' }
     ]},
-    { grupo: 'Difusión', items: [
-      { id: 'comparticion', n: '9', titulo: 'Compartición y publicación', tema: 'comparticion', ud: 'D13' }
+    { grupo: 'Difusión', tono: 'difusion', items: [
+      { id: 'comparticion', n: '9', titulo: 'Compartición y publicación', tema: 'comparticion' }
     ]},
-    { grupo: 'Gestión', items: [
-      { id: 'responsabilidades', n: '10', titulo: 'Responsabilidades y recursos', pendiente: 'D14',
-        adelanto: 'Reparto de tareas con nombres de personas, coste y partidas, y qué ocurre si alguien deja el proyecto.' }
+    { grupo: 'Gestión', tono: 'gestion', items: [
+      { id: 'responsabilidades', n: '10', titulo: 'Responsabilidades y recursos', tema: 'responsabilidades' }
     ]},
-    { grupo: null, items: [
+    { grupo: 'Cierre', tono: 'cierre', items: [
       { id: 'revision', titulo: 'Revisión y exportación' }
     ]}
   ];
 
   /* --- Comprobaciones -------------------------------------------------
-     Son las de la lista del curso que se pueden automatizar con lo que
-     hay en esta maqueta. Cada aviso dice a qué sección pertenece, para
-     poder mostrarlo donde se arregla y no en una lista suelta.        */
+     Solo las que se pueden automatizar: que un campo esté puesto, que
+     dos apartados no se contradigan, que no se haya colado una palabra
+     que no compromete a nada. Cada aviso dice a qué apartado pertenece,
+     para mostrarlo donde se arregla y no en una lista suelta.         */
 
   var VAGAS = /\b(adecuad|apropiad|pertinent|vigent|necesari|periódic|periodic|correspondient)[oa]s?\b/i;
 
@@ -376,13 +526,53 @@
           texto: id + ' contiene datos personales: falta decir si son de categoría especial. En investigación biomédica casi siempre lo son.'
         });
       }
+
+      /* Las comprobaciones que cruzan apartados son las que de verdad
+         valen: cada apartado por separado puede parecer correcto y
+         contradecir al de al lado. */
+      if (c.personal_data === 'yes' && !c.x_base_legal) {
+        avisos.push({
+          grave: false, seccion: 'legal', conjunto: id,
+          texto: id + ' contiene datos personales y no declara en qué se ampara su tratamiento. No todos los conjuntos se apoyan en la misma base.'
+        });
+      }
+      if (c.x_base_legal === 'consentimiento' && c.x_origen === 'asistencial') {
+        avisos.push({
+          grave: false, seccion: 'legal', conjunto: id,
+          texto: id + ' es de origen asistencial y se ampara en el consentimiento del proyecto. Conviene comprobarlo: un dato recogido antes, para atender al paciente, rara vez queda cubierto por un consentimiento firmado después.'
+        });
+      }
+      if (c.x_destino === 'open' && c.personal_data === 'yes' &&
+          c.x_identificabilidad && c.x_identificabilidad !== 'anonimo' && c.x_identificabilidad !== 'no-personal') {
+        avisos.push({
+          grave: true, seccion: 'comparticion', conjunto: id,
+          texto: id + ' se declara abierto y a la vez seudonimizado o identificable. Un conjunto que sigue siendo dato personal no puede publicarse en abierto: o se anonimiza de verdad, o el destino es acceso controlado.'
+        });
+      }
     });
+
+    if (!String(doc.x_pgd.x_muestras_hay || '')) {
+      avisos.push({ grave: false, seccion: 'muestras',
+        texto: 'Falta decir si el proyecto maneja muestras biológicas. Responder que no también cierra el apartado.' });
+    }
+    if (!String(doc.x_pgd.x_comite || '').trim()) {
+      avisos.push({ grave: false, seccion: 'legal',
+        texto: 'Falta el comité de ética y la referencia de su dictamen, que es lo que permite comprobar que la aprobación existe.' });
+    }
+    if (!String(doc.x_pgd.x_coste || '').trim()) {
+      avisos.push({ grave: false, seccion: 'responsabilidades',
+        texto: 'Falta el coste de gestionar los datos. Es elegible dentro de la ayuda si se ha previsto, y no lo es si aparece cuando ya no hay presupuesto.' });
+    }
+    if (!String(doc.x_pgd.x_custodia_larga || '').trim()) {
+      avisos.push({ grave: false, seccion: 'responsabilidades',
+        texto: 'Falta quién custodia los datos cuando el proyecto termine. Tiene que ser una unidad que siga existiendo, no una persona.' });
+    }
 
     return avisos;
   }
 
   /* Estado de una sección, para el punto del índice.
-     lleno · parcial · vacio · pendiente (aún sin campos en la maqueta) */
+     lleno · parcial · vacio                                          */
   function estadoSeccion(doc, id) {
     var d = doc.dmp;
     function e(hechos, total) {
@@ -404,9 +594,10 @@
         return comprobar(doc).length ? 'parcial' : 'lleno';
       default:
         var tema = TEMAS[id];
-        if (!tema) { return 'pendiente'; }
+        if (!tema) { return 'vacio'; }
         var hechos = 0, total = 0;
         tema.proyecto.forEach(function (f) {
+          if (!campoVisible(f, doc.x_pgd)) { return; }
           total++;
           if (String(doc.x_pgd[f.k] || '').trim()) { hechos++; }
         });
@@ -453,8 +644,8 @@
   }
 
   /* --- Versiones -------------------------------------------------------
-     Dos números, como recomienda D9·01: el primero para los cambios que
-     obligan a avisar a alguien, el segundo para los que no.           */
+     Dos números: el primero para los cambios que obligan a avisar a
+     alguien, el segundo para los que no.                             */
 
   function subirVersion(v, mayor) {
     var p = String(v || '1.0').split('.');
@@ -540,6 +731,7 @@
     comprobar: comprobar,
     estadoSeccion: estadoSeccion,
     nivelHecho: nivelHecho,
+    campoVisible: campoVisible,
     aJSON: aJSON,
     desdeJSON: desdeJSON,
     subirVersion: subirVersion,
@@ -556,6 +748,9 @@
     ORIGEN: ORIGEN,
     IDENTIFICABILIDAD: IDENTIFICABILIDAD,
     DESTINO: DESTINO,
+    SI_NO: SI_NO,
+    BASE_LEGAL: BASE_LEGAL,
+    EIPD: EIPD,
     ESTADO_FINANCIACION: ESTADO_FINANCIACION
   };
 })(window);

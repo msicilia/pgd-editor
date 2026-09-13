@@ -1,56 +1,98 @@
 /* ------------------------------------------------------------------
    Aspecto de aplicación de escritorio, no de página web.
 
-   Lo que cambia y por qué:
+   Lo que sostiene el diseño:
 
-   · Tipografía del sistema, la de verdad. Antes el CSS pedía Newsreader
-     y Public Sans sin cargarlas, así que ya caía a la del sistema, pero
-     con tamaños pensados para una página web.
-   · Cuerpo de 13 px y líneas apretadas. Una aplicación se opera, no se
-     lee de corrido: cabe más y se recorre con la vista más rápido.
-   · Casi ninguna sombra. Separadores finos en vez de tarjetas flotando.
-   · El acento aparece poco: la selección del índice, marcas pequeñas y
-     el botón principal. El resto es gris.
-   · Radios pequeños y controles bajos, como los del sistema.
+   · Tipografía del sistema. Cuerpo de 13 px y líneas apretadas: una
+     aplicación se opera, no se lee de corrido.
+   · Casi ninguna sombra. Separadores finos en vez de tarjetas
+     flotando, y radios pequeños, como los controles del sistema.
+   · Contraste suficiente para leer. El gris más claro que se usa para
+     texto queda por encima de 4.5:1 sobre su fondo, en los dos temas.
+   · **Un tono por grupo del índice.** Es lo único que dice, sin leer
+     nada, en qué parte del documento se está trabajando: la etiqueta
+     del grupo, el filo del apartado seleccionado y la cejilla que
+     encabeza el panel llevan el mismo color. Aparece solo en esos tres
+     sitios y siempre en piezas pequeñas; el resto de la pantalla es
+     gris, y el verde sigue significando «esto se puede pulsar».
    ------------------------------------------------------------------ */
 :root{
-  --paper:#ececec; --lienzo:#ffffff; --barra-f:#f6f6f6;
-  --surface:#ffffff; --surface-2:#f2f3f3; --surface-3:#e8eaea;
-  --ink:#1d2220; --ink-2:#55605d; --ink-3:#868f8c;
-  --line:#e0e3e2; --line-2:#cbd1cf; --line-3:#b4bcb9;
-  --accent:#12756b; --accent-ink:#0d5850; --accent-soft:#e2efed;
-  --alerta:#a3402c; --alerta-soft:#f9eae6;
-  --aviso:#8a6231; --aviso-soft:#f8f1e6;
-  --ok:#2c7a52;
-  --sel:#d9e9e6;
+  --paper:#e6eae8; --lienzo:#ffffff; --barra-f:#f3f6f5;
+  --surface:#ffffff; --surface-2:#f1f4f3; --surface-3:#e2e7e5;
+  --ink:#101614; --ink-2:#3f4b48; --ink-3:#66716e;
+  --line:#dce1df; --line-2:#c2cac7; --line-3:#96a09d;
+  --accent:#0f6b62; --accent-ink:#0a504a; --accent-soft:#dcebe8;
+  --alerta:#8f3320; --alerta-soft:#f8e8e3;
+  --aviso:#77501e; --aviso-soft:#f7f0e2;
+  --ok:#1d6a44;
+  --sel:#cde3df;
+
+  /* tonos de grupo */
+  --t-documento:#3f5566;
+  --t-datos:#0f6b62;
+  --t-documentacion:#2a6b93;
+  --t-legal:#8f3320;
+  --t-custodia:#57499a;
+  --t-difusion:#1d6a44;
+  --t-gestion:#77501e;
+  --t-cierre:#4a5350;
+
   --fuente:-apple-system,BlinkMacSystemFont,"Segoe UI Variable Text","Segoe UI",
            Inter,Ubuntu,"Helvetica Neue",Arial,sans-serif;
   --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --paper:#1b1f1e; --lienzo:#232827; --barra-f:#2a302e;
-    --surface:#232827; --surface-2:#2b3130; --surface-3:#343b39;
-    --ink:#e8ecea; --ink-2:#a9b2af; --ink-3:#7e8784;
-    --line:#333b39; --line-2:#414a48; --line-3:#525c59;
-    --accent:#49b5a6; --accent-ink:#74cfc1; --accent-soft:#1c3733;
-    --alerta:#e08d79; --alerta-soft:#33201b;
-    --aviso:#cfa065; --aviso-soft:#2e2517;
-    --ok:#63bd8c;
-    --sel:#26423d;
+    --paper:#171b1a; --lienzo:#202524; --barra-f:#282e2d;
+    --surface:#202524; --surface-2:#2a302f; --surface-3:#353c3a;
+    --ink:#edf1ef; --ink-2:#b4bdba; --ink-3:#8b9491;
+    --line:#333b39; --line-2:#434c4a; --line-3:#5c6664;
+    --accent:#4cbcac; --accent-ink:#7ad7c8; --accent-soft:#1b3733;
+    --alerta:#e5947c; --alerta-soft:#37211c;
+    --aviso:#d5a96b; --aviso-soft:#312717;
+    --ok:#6cc394;
+    --sel:#27443f;
+
+    --t-documento:#93b3ca;
+    --t-datos:#4cbcac;
+    --t-documentacion:#78b9e2;
+    --t-legal:#e5947c;
+    --t-custodia:#ac9de8;
+    --t-difusion:#6cc394;
+    --t-gestion:#d5a96b;
+    --t-cierre:#a6b1ad;
   }
 }
 :root[data-theme="dark"]{
-  --paper:#1b1f1e; --lienzo:#232827; --barra-f:#2a302e;
-  --surface:#232827; --surface-2:#2b3130; --surface-3:#343b39;
-  --ink:#e8ecea; --ink-2:#a9b2af; --ink-3:#7e8784;
-  --line:#333b39; --line-2:#414a48; --line-3:#525c59;
-  --accent:#49b5a6; --accent-ink:#74cfc1; --accent-soft:#1c3733;
-  --alerta:#e08d79; --alerta-soft:#33201b;
-  --aviso:#cfa065; --aviso-soft:#2e2517;
-  --ok:#63bd8c;
-  --sel:#26423d;
+  --paper:#171b1a; --lienzo:#202524; --barra-f:#282e2d;
+  --surface:#202524; --surface-2:#2a302f; --surface-3:#353c3a;
+  --ink:#edf1ef; --ink-2:#b4bdba; --ink-3:#8b9491;
+  --line:#333b39; --line-2:#434c4a; --line-3:#5c6664;
+  --accent:#4cbcac; --accent-ink:#7ad7c8; --accent-soft:#1b3733;
+  --alerta:#e5947c; --alerta-soft:#37211c;
+  --aviso:#d5a96b; --aviso-soft:#312717;
+  --ok:#6cc394;
+  --sel:#27443f;
+
+  --t-documento:#93b3ca;
+  --t-datos:#4cbcac;
+  --t-documentacion:#78b9e2;
+  --t-legal:#e5947c;
+  --t-custodia:#ac9de8;
+  --t-difusion:#6cc394;
+  --t-gestion:#d5a96b;
+  --t-cierre:#a6b1ad;
 }
+
+/* cada grupo del índice lleva el suyo; todo lo demás lo lee de --g */
+.t-documento{--g:var(--t-documento)}
+.t-datos{--g:var(--t-datos)}
+.t-documentacion{--g:var(--t-documentacion)}
+.t-legal{--g:var(--t-legal)}
+.t-custodia{--g:var(--t-custodia)}
+.t-difusion{--g:var(--t-difusion)}
+.t-gestion{--g:var(--t-gestion)}
+.t-cierre{--g:var(--t-cierre)}
 
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -97,7 +139,7 @@ button{
 }
 button:hover:not(:disabled){background:var(--surface-2); color:var(--ink)}
 button:active:not(:disabled){background:var(--surface-3)}
-button:disabled{opacity:.42}
+button:disabled{opacity:.45}
 button.principal{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:500}
 button.principal:hover:not(:disabled){background:var(--accent-ink); border-color:var(--accent-ink); color:#fff}
 button.discreto{border-color:transparent; background:none; color:var(--ink-3); padding:3px 7px}
@@ -117,7 +159,7 @@ button.barra-b .insignia.limpio{background:var(--accent-soft); color:var(--ok)}
 
 /* menú desplegable de exportación */
 .menu-flotante{
-  position:absolute; z-index:60; min-width:262px; padding:4px;
+  position:absolute; z-index:60; min-width:262px; max-width:min(340px,92vw); padding:4px;
   background:var(--surface); border:1px solid var(--line-2);
   border-radius:7px; box-shadow:0 6px 22px rgba(15,30,27,.18);
 }
@@ -131,30 +173,35 @@ button.barra-b .insignia.limpio{background:var(--accent-soft); color:var(--ok)}
 .menu-flotante hr{border:0; border-top:1px solid var(--line); margin:4px 2px}
 
 /* ================= rejilla ================= */
-.rejilla{display:grid; grid-template-columns:clamp(208px,19vw,272px) minmax(0,1fr);
+.rejilla{display:grid; grid-template-columns:clamp(212px,19vw,276px) minmax(0,1fr);
   flex:1; min-height:0}
 .velo{display:none}
 
 /* ---------- índice, al estilo de una lista de origen ---------- */
 .indice{
   background:var(--paper); border-right:1px solid var(--line-2);
-  overflow-y:auto; min-height:0; padding:6px 0 40px;
+  overflow-y:auto; min-height:0; padding:4px 0 40px;
 }
 .indice .grupo{
-  padding:12px 14px 3px; font-size:10px; font-weight:700;
-  letter-spacing:.07em; text-transform:uppercase; color:var(--ink-3);
+  display:flex; align-items:center; gap:6px;
+  padding:14px 14px 4px; font-size:10px; font-weight:700;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--g,var(--ink-3));
+}
+.indice .grupo .marca{
+  width:5px; height:5px; border-radius:1px; background:var(--g,var(--line-3)); flex:none;
 }
 .indice .item, .indice .hijo{
   display:flex; align-items:center; gap:7px; width:calc(100% - 12px);
   margin:0 6px; text-align:left;
   font:inherit; font-size:12.5px; background:none; border:0;
-  border-radius:5px; color:var(--ink-2); padding:4px 8px;
+  border-left:2px solid transparent;
+  border-radius:0 5px 5px 0; color:var(--ink-2); padding:4px 8px;
 }
 .indice .item:hover, .indice .hijo:hover{background:var(--surface-3); color:var(--ink)}
 .indice .item[aria-current="true"], .indice .hijo[aria-current="true"]{
-  background:var(--sel); color:var(--accent-ink); font-weight:600;
+  background:var(--sel); color:var(--ink); font-weight:600;
+  border-left-color:var(--g,var(--accent));
 }
-.indice .item.futuro{color:var(--ink-3)}
 .indice .punto{
   flex:none; width:7px; height:7px; border-radius:50%;
   border:1px solid var(--line-3); background:transparent;
@@ -165,48 +212,59 @@ button.barra-b .insignia.limpio{background:var(--accent-soft); color:var(--ok)}
   background:linear-gradient(90deg,var(--aviso) 0 50%,transparent 50% 100%);
 }
 .indice .punto.vacio{border-color:var(--line-3); background:transparent}
-.indice .punto.pendiente{border:0; width:3px; height:3px; margin:0 2px; background:var(--line-3)}
 .indice .rot{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .indice .num{font-family:var(--mono); font-size:10px; color:var(--ink-3); margin-right:5px}
-.indice .item[aria-current="true"] .num{color:var(--accent-ink)}
+.indice .item[aria-current="true"] .num{color:var(--g,var(--accent-ink))}
 .indice .cuenta{
-  font-family:var(--mono); font-size:10px; color:var(--ink-3);
+  font-family:var(--mono); font-size:10px; color:var(--ink-2);
   background:var(--surface-3); border-radius:9px; padding:1px 6px; flex:none;
 }
 .indice .cuenta.alerta{background:var(--aviso-soft); color:var(--aviso)}
 .indice .hijo{padding-left:32px; font-size:12px}
 .indice .hijo .cod{font-family:var(--mono); font-size:10px; color:var(--ink-3);
   flex:none; background:none; padding:0}
-.indice .hijo[aria-current="true"] .cod{color:var(--accent-ink)}
+.indice .hijo[aria-current="true"] .cod{color:var(--g,var(--accent-ink))}
 .indice .hijo.anadir{color:var(--ink-3); font-size:11.5px; margin-bottom:4px}
 .indice .hijo.anadir:hover{color:var(--accent-ink)}
 
 /* ================= panel ================= */
+/* La columna de lectura la fija el relleno del propio panel, no un
+   margen automático en cada hijo: cualquier regla con `margin` en
+   forma abreviada lo habría anulado sin avisar, y eso es lo que dejaba
+   unos bloques centrados y otros pegados al borde. */
 .panel{
   overflow-y:auto; min-height:0; outline:none; background:var(--lienzo);
-  padding:clamp(14px,2vw,24px) clamp(14px,2.6vw,34px) 90px;
+  padding-top:clamp(14px,2vw,24px);
+  padding-bottom:90px;
+  padding-left:max(clamp(14px,2.6vw,34px), calc((100% - 680px) / 2));
+  padding-right:max(clamp(14px,2.6vw,34px), calc((100% - 680px) / 2));
+  overflow-wrap:anywhere;
 }
-.panel > *{max-width:680px; margin-left:auto; margin-right:auto}
-.cab{margin-bottom:4px}
+/* y nada de lo que se escriba puede salirse de su caja */
+.panel *{max-width:100%; min-width:0}
+
+.cab{margin-bottom:6px; padding-left:12px; border-left:3px solid var(--g,var(--accent))}
 .cab .volver{border:0; background:none; padding:0 0 8px; color:var(--ink-3); font-size:11.5px}
 .cab .volver:hover{color:var(--accent-ink); background:none}
+.cab .cejilla{
+  margin:0 0 4px; font-size:10px; font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--g,var(--accent));
+}
 .cab h2{font-size:17px; font-weight:600; line-height:1.25; margin:0; letter-spacing:-.01em}
-.cab h2 .num{font-family:var(--mono); font-size:12px; color:var(--accent);
+.cab h2 .num{font-family:var(--mono); font-size:12px; color:var(--ink-3);
   margin-right:9px; font-weight:500}
-.cab .ud{font-size:11.5px; color:var(--ink-3); margin:5px 0 0}
-.cab .ud strong{color:var(--accent-ink); font-weight:600}
-.pista{font-size:12.5px; color:var(--ink-3); margin:9px 0 16px; line-height:1.5; max-width:70ch}
+.pista{font-size:12.5px; color:var(--ink-2); margin:11px 0 16px; line-height:1.55; max-width:70ch}
 
-.grupo-campos{margin-bottom:24px}
+.grupo-campos{margin-bottom:26px}
 .grupo-campos > h3{
   font-size:10.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
-  color:var(--ink-3); margin:0 0 9px; padding-bottom:5px;
-  border-bottom:1px solid var(--line);
+  color:var(--ink-2); margin:0 0 10px; padding-bottom:5px;
+  border-bottom:1px solid var(--line-2);
 }
 .grupo-campos .pista{margin-top:0}
 
 /* ---------- campos ---------- */
-.campo{display:flex; flex-direction:column; gap:4px; min-width:0; margin-bottom:11px}
+.campo{display:flex; flex-direction:column; gap:4px; min-width:0; margin-bottom:13px}
 .campo-cab{display:flex; align-items:center; gap:6px}
 .campo-cab label{flex:1; min-width:0; font-size:11.5px; font-weight:600; color:var(--ink-2)}
 .campos{display:grid; gap:11px}
@@ -216,22 +274,22 @@ button.barra-b .insignia.limpio{background:var(--accent-soft); color:var(--ok)}
 input[type=text], input[type=email], input[type=date], textarea, select{
   font:inherit; font-size:12.5px; color:var(--ink); background:var(--surface);
   border:1px solid var(--line-2); border-radius:5px; padding:5px 8px;
-  width:100%; min-width:0;
+  width:100%; min-width:0; max-width:100%;
 }
 input.grande{font-size:14px; padding:6px 9px}
 textarea{resize:vertical; min-height:58px; line-height:1.45}
 input:focus, textarea:focus, select:focus{
   border-color:var(--accent); outline:none; box-shadow:0 0 0 2px var(--accent-soft);
 }
-input::placeholder, textarea::placeholder{color:var(--ink-3); opacity:.8}
-select{appearance:none; padding-right:26px;
+input::placeholder, textarea::placeholder{color:var(--ink-3); opacity:.85}
+select{appearance:none; padding-right:26px; text-overflow:ellipsis;
   background-image:linear-gradient(45deg,transparent 50%,var(--ink-3) 50%),
                    linear-gradient(135deg,var(--ink-3) 50%,transparent 50%);
   background-position:calc(100% - 14px) 52%, calc(100% - 10px) 52%;
   background-size:4px 4px,4px 4px; background-repeat:no-repeat}
 
 /* Campo pendiente: un punto junto a la etiqueta y una línea en el borde.
-   Rojizo si el estándar lo exige; gris si el curso lo recomienda. */
+   Rojizo si sin él el apartado no dice nada; gris si es recomendable. */
 .campo.falta-obl > .campo-cab label::after,
 .campo.falta-rec > .campo-cab label::after{
   content:''; display:inline-block; width:5px; height:5px; border-radius:50%;
@@ -247,16 +305,16 @@ select{appearance:none; padding-right:26px;
 button.ayuda-b{
   flex:none; width:16px; height:16px; padding:0; border-radius:50%;
   border:1px solid var(--line-2); background:var(--surface);
-  color:var(--ink-3); font-size:10px; font-weight:700; line-height:1;
+  color:var(--ink-2); font-size:10px; font-weight:700; line-height:1;
   display:flex; align-items:center; justify-content:center;
 }
 button.ayuda-b:hover:not(:disabled){border-color:var(--accent); color:var(--accent-ink);
   background:var(--accent-soft)}
 button.ayuda-b.activa{background:var(--accent); border-color:var(--accent); color:#fff}
 .campo > .ayuda{
-  margin:0; font-size:11.5px; line-height:1.5; color:var(--ink-2);
+  margin:0; font-size:11.5px; line-height:1.55; color:var(--ink-2);
   background:var(--surface-2); border-left:2px solid var(--accent);
-  border-radius:0 5px 5px 0; padding:6px 9px;
+  border-radius:0 5px 5px 0; padding:7px 10px;
 }
 
 /* ---------- conjuntos ---------- */
@@ -267,14 +325,14 @@ button.ayuda-b.activa{background:var(--accent); border-color:var(--accent); colo
 .conjunto-cab{display:flex; align-items:center; gap:8px; margin-bottom:9px; flex-wrap:wrap}
 .conjunto-cab .sep{margin-left:auto}
 .cod{font-family:var(--mono); font-size:11px; padding:2px 6px; border-radius:4px;
-  background:var(--surface-3); color:var(--ink-2)}
+  background:var(--surface-3); color:var(--ink-2); flex:none}
 button.enlace{border:0; background:none; color:var(--accent-ink); padding:3px 5px; font-size:11.5px}
 button.enlace:hover{background:var(--surface-2)}
-.menor{font-size:11.5px; color:var(--ink-3); line-height:1.5}
+.menor{font-size:11.5px; color:var(--ink-2); line-height:1.55}
 .menor.mt{margin:9px 0 0}
 .vacio{border:1px dashed var(--line-2); border-radius:6px; padding:22px 20px;
   background:var(--surface); text-align:center}
-.vacio p{margin:0 auto 11px; max-width:56ch; color:var(--ink-3)}
+.vacio p{margin:0 auto 11px; max-width:56ch; color:var(--ink-2)}
 
 /* ---------- niveles y bloques plegables ---------- */
 .nivel{border:1px solid var(--line-2); border-radius:6px; background:var(--surface);
@@ -291,8 +349,8 @@ button.enlace:hover{background:var(--surface-2)}
   text-overflow:ellipsis; white-space:nowrap}
 .nivel-estado{font-size:10.5px; color:var(--ink-3); font-family:var(--mono); flex:none}
 .nivel-estado.completo{color:var(--ok)}
-.nivel-cuerpo{padding:12px 13px 3px}
-.nivel-cuerpo .pista{margin-top:0; margin-bottom:12px}
+.nivel-cuerpo{padding:13px 13px 4px}
+.nivel-cuerpo .pista{margin-top:0; margin-bottom:13px}
 .entre-conjuntos{display:flex; gap:8px; flex-wrap:wrap; margin-top:20px;
   padding-top:14px; border-top:1px solid var(--line)}
 
@@ -300,7 +358,7 @@ button.enlace:hover{background:var(--surface-2)}
 .tabla-resumen{overflow-x:auto; margin:0 0 16px; border:1px solid var(--line-2);
   border-radius:6px; background:var(--surface)}
 .tabla-resumen table{border-collapse:collapse; width:100%; font-size:12px}
-.tabla-resumen th{text-align:left; font-weight:600; color:var(--ink-2);
+.tabla-resumen th{text-align:left; font-weight:700; color:var(--ink-2);
   background:var(--surface-2); border-bottom:1px solid var(--line-2);
   padding:6px 10px; font-size:10.5px; letter-spacing:.04em; text-transform:uppercase}
 .tabla-resumen td{padding:6px 10px; border-bottom:1px solid var(--line);
@@ -313,51 +371,45 @@ button.enlace:hover{background:var(--surface-2)}
 
 /* ---------- cuadros ---------- */
 .destacado{background:var(--accent-soft); border-left:2px solid var(--accent);
-  border-radius:0 5px 5px 0; padding:9px 12px; margin:0 0 13px}
+  border-radius:0 5px 5px 0; padding:10px 12px; margin:0 0 14px}
 .destacado .et{font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
   color:var(--accent-ink); margin:0 0 4px}
-.destacado p{margin:0; font-size:12.5px; line-height:1.5; color:var(--ink)}
-.pendiente-caja{border:1px dashed var(--line-2); border-radius:6px;
-  padding:17px 19px; background:var(--surface); margin-top:11px}
-.pendiente-caja .et{font-size:10px; font-weight:700; letter-spacing:.07em;
-  text-transform:uppercase; color:var(--ink-3); margin:0 0 7px}
-.pendiente-caja p{margin:0 0 9px; color:var(--ink-2); line-height:1.55}
-.pendiente-caja .ref{margin:0; font-size:11.5px; color:var(--ink-3)}
+.destacado p{margin:0; font-size:12.5px; line-height:1.55; color:var(--ink)}
 
-.avisos-bloque{margin-top:20px; padding-top:14px; border-top:1px solid var(--line)}
+.avisos-bloque{margin-top:22px; padding-top:14px; border-top:1px solid var(--line-2)}
 .avisos-bloque h3{font-size:10.5px; font-weight:700; letter-spacing:.07em;
-  text-transform:uppercase; color:var(--ink-3); margin:0 0 8px}
+  text-transform:uppercase; color:var(--ink-2); margin:0 0 8px}
 .avisos-bloque h3 button.enlace{font-size:10.5px; font-weight:700; letter-spacing:.07em;
   text-transform:uppercase; padding:0}
 .avisos{list-style:none; margin:0; padding:0; display:grid; gap:6px}
-.avisos li{font-size:12px; line-height:1.5; padding:7px 10px; border-radius:5px;
+.avisos li{font-size:12px; line-height:1.55; padding:7px 10px; border-radius:5px;
   background:var(--surface-2); color:var(--ink-2); border-left:2px solid var(--line-2)}
 .avisos li.grave{background:var(--alerta-soft); border-left-color:var(--alerta); color:var(--ink)}
 .avisos li.leve{background:var(--aviso-soft); border-left-color:var(--aviso); color:var(--ink)}
-.todo-bien{font-size:12.5px; padding:10px 12px; border-radius:5px; line-height:1.5;
+.todo-bien{font-size:12.5px; padding:11px 12px; border-radius:5px; line-height:1.55;
   background:var(--accent-soft); border-left:2px solid var(--ok); color:var(--ink)}
 
 .leyenda{display:flex; gap:16px; flex-wrap:wrap; margin:0 0 16px; font-size:11.5px;
-  color:var(--ink-3)}
+  color:var(--ink-2)}
 .leyenda span{display:inline-flex; align-items:center; gap:6px}
-.leyenda i{width:6px; height:6px; border-radius:50%; display:inline-block}
+.leyenda i{width:6px; height:6px; border-radius:50%; display:inline-block; flex:none}
 .leyenda i.obl{background:var(--alerta)}
 .leyenda i.rec{background:var(--line-3)}
 
-.acciones-panel{margin-top:26px; padding-top:16px; border-top:1px solid var(--line)}
+.acciones-panel{margin-top:28px; padding-top:16px; border-top:1px solid var(--line-2)}
 .acciones-panel h3{font-size:10.5px; font-weight:700; letter-spacing:.07em;
-  text-transform:uppercase; color:var(--ink-3); margin:0 0 7px}
-.acciones-panel .menor{margin:0 0 11px; max-width:64ch}
+  text-transform:uppercase; color:var(--ink-2); margin:0 0 7px}
+.acciones-panel .menor{margin:0 0 12px; max-width:64ch}
 .fila-botones{display:flex; gap:7px; flex-wrap:wrap}
-.version-caja{margin:0 0 14px; padding:10px 12px; border:1px solid var(--line-2);
+.version-caja{margin:0 0 14px; padding:11px 12px; border:1px solid var(--line-2);
   border-radius:6px; background:var(--surface)}
 .version-caja .et{font-size:10px; font-weight:700; letter-spacing:.07em;
-  text-transform:uppercase; color:var(--ink-3); margin:0 0 7px}
-.version-caja .menor{margin:8px 0 0}
+  text-transform:uppercase; color:var(--ink-2); margin:0 0 8px}
+.version-caja .menor{margin:9px 0 0}
 .version-actual{font-family:var(--mono); font-size:13px; color:var(--ink-2);
   background:var(--surface-3); border-radius:5px; padding:4px 9px; align-self:center}
 
-button.borrar{border-color:var(--line-2); background:var(--surface); color:var(--ink-3);
+button.borrar{border-color:var(--line-2); background:var(--surface); color:var(--ink-2);
   padding:4px 9px; font-size:12px}
 button.borrar:hover:not(:disabled){border-color:var(--alerta); color:var(--alerta);
   background:var(--alerta-soft)}
@@ -367,50 +419,47 @@ button.borrar:hover:not(:disabled){border-color:var(--alerta); color:var(--alert
 
 /* ---------- arrastre y mensajes ---------- */
 .soltar{position:fixed; inset:0; z-index:100; display:none;
-  align-items:center; justify-content:center; background:rgba(18,117,107,.13)}
+  align-items:center; justify-content:center; background:rgba(15,107,98,.14)}
 .soltar.activa{display:flex}
 .soltar > div{background:var(--surface); border:2px dashed var(--accent); border-radius:9px;
   padding:24px 32px; font-size:14px; color:var(--accent-ink); font-weight:600}
 .aviso-flotante{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
   background:var(--surface); border:1px solid var(--line-2); border-left:3px solid var(--accent);
-  border-radius:6px; padding:8px 14px; font-size:12.5px; color:var(--ink);
-  box-shadow:0 4px 16px rgba(15,30,27,.16); z-index:120; max-width:min(520px,90vw)}
+  border-radius:6px; padding:9px 14px; font-size:12.5px; color:var(--ink);
+  box-shadow:0 4px 16px rgba(15,30,27,.18); z-index:120; max-width:min(520px,90vw);
+  overflow-wrap:anywhere}
 .aviso-flotante.error{border-left-color:var(--alerta)}
-
-@media (max-width:1040px){
-  .barra .menu{display:block}
-  .barra .rot-largo{display:none}
-  .rejilla{grid-template-columns:1fr; position:relative}
-  .indice{position:absolute; top:0; bottom:0; left:0; width:min(262px,86vw); z-index:40;
-    transform:translateX(-100%); transition:transform .14s ease;
-    box-shadow:2px 0 14px rgba(15,30,27,.16)}
-  body.indice-visible .indice{transform:none}
-  body.indice-visible .velo{display:block; position:absolute; inset:0; z-index:39;
-    background:rgba(12,20,18,.26)}
-}
-@media (prefers-reduced-motion:reduce){*{transition:none !important; animation:none !important}}
-
 
 /* ---------- confirmación en línea ----------
    El diálogo del navegador no se muestra dentro de la aplicación de
    escritorio, así que la confirmación se dibuja donde se pidió. */
 .confirmar{
-  margin-top:11px; padding:10px 12px; border-radius:6px;
+  margin-top:11px; padding:11px 12px; border-radius:6px;
   background:var(--alerta-soft); border:1px solid var(--alerta);
 }
-.confirmar p{margin:0 0 9px; font-size:12.5px; line-height:1.5; color:var(--ink)}
+.confirmar p{margin:0 0 9px; font-size:12.5px; line-height:1.55; color:var(--ink)}
 button.peligro{background:var(--alerta); border-color:var(--alerta); color:#fff; font-weight:500}
-button.peligro:hover:not(:disabled){filter:brightness(.92); color:#fff}
+button.peligro:hover:not(:disabled){filter:brightness(1.08); color:#fff}
 
 /* ---------- estado de la versión ---------- */
 .ver.cerrada{background:var(--accent-soft); color:var(--accent-ink); font-weight:600}
 .version-actual.cerrada{background:var(--accent-soft); color:var(--accent-ink)}
 .menu-flotante .menu-aviso{
-  margin:4px 2px 2px; padding:7px 9px; border-radius:5px; font-size:11.5px;
+  margin:4px 2px 2px; padding:8px 9px; border-radius:5px; font-size:11.5px;
   line-height:1.5; background:var(--aviso-soft); color:var(--aviso);
+  overflow-wrap:anywhere;
 }
-.cab-acciones{margin-top:9px; display:flex; gap:8px; flex-wrap:wrap}
+.cab-acciones{margin-top:10px; display:flex; gap:8px; flex-wrap:wrap}
 
-/* Nada de lo que se escribe debe desbordar su caja. */
-.pista, .menor, .ayuda, .destacado p, .pendiente-caja p, .avisos li,
-.todo-bien, .confirmar p, .indice .grupo{overflow-wrap:anywhere}
+@media (max-width:1040px){
+  .barra .menu{display:block}
+  .barra .rot-largo{display:none}
+  .rejilla{grid-template-columns:1fr; position:relative}
+  .indice{position:absolute; top:0; bottom:0; left:0; width:min(266px,86vw); z-index:40;
+    transform:translateX(-100%); transition:transform .14s ease;
+    box-shadow:2px 0 14px rgba(15,30,27,.16)}
+  body.indice-visible .indice{transform:none}
+  body.indice-visible .velo{display:block; position:absolute; inset:0; z-index:39;
+    background:rgba(12,20,18,.28)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important; animation:none !important}}

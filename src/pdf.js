@@ -9,16 +9,12 @@
    De ahí se sigue algo que conviene aprovechar: **el formato impreso
    es una decisión de presentación, no del archivo**. El mismo
    documento se puede imprimir de varias maneras y todas se reimportan
-   igual. Por eso hay dos:
+   igual. De momento se imprime de una: por los apartados de la
+   plantilla de la Comisión Europea, citados por su título y no por su
+   número, porque la Comisión los renumera al revisar la plantilla.
 
-     · «curso», por decisiones, en el orden de la plantilla del curso.
-       Es el que sirve para trabajar y para enseñar.
-     · «ec», por los apartados de la plantilla de la Comisión Europea,
-       citados por su título y no por su número, porque la Comisión los
-       renumera al revisar la plantilla.
-
-   Escribir una vez y volcar, que es la tesis de D8·04, deja de ser una
-   afirmación y pasa a ser un botón.
+   Escribir una vez y volcar en el formulario que toque: eso es lo que
+   justifica que el editor no se organice como la plantilla europea.
 
    El modelo va por duplicado dentro del fichero:
 
@@ -73,8 +69,8 @@
   function tresT(v) { return v === 'yes' ? 'Sí' : v === 'no' ? 'No' : 'Sin determinar'; }
 
   /* ================================================================
-     El lienzo: primitivas de dibujo compartidas por las dos
-     disposiciones. Ninguna sabe nada del plan.
+     El lienzo: las primitivas de dibujo. No saben nada del plan, de
+     modo que sirven igual para cualquier otra plantilla que se añada.
      ================================================================ */
   async function lienzo(pdf, L) {
     var reg = await pdf.embedFont(L.StandardFonts.Helvetica);
@@ -155,7 +151,7 @@
         var v = String(valor == null ? '' : valor).trim();
         if (!v && o.omitirVacio) { return; }
         api.sitio(28);
-        api.escribir(et, { negrita: true, tam: 8.5, color: SUAVE });
+        if (et) { api.escribir(et, { negrita: true, tam: 8.5, color: SUAVE }); }
         api.escribir(v || (o.vacio || '— sin cumplimentar —'),
           { tam: 10.5, color: v ? TINTA : FALTA });
         api.espacio(6);
@@ -228,116 +224,26 @@
   }
 
   /* ================================================================
-     Disposición «curso»: por decisiones, en el orden de la plantilla.
-     ================================================================ */
-  function disposicionCurso(a, doc) {
-    var d = doc.dmp, x = doc.x_pgd, M = global.Modelo;
-
-    a.nuevaPagina();
-    a.escribir('PLAN DE GESTIÓN DE DATOS', { negrita: true, tam: 9.5, color: a.ACENTO });
-    a.espacio(10);
-    a.escribir(d.title || 'Sin título', { negrita: true, tam: 21 });
-    a.espacio(6);
-    a.escribir('Versión ' + x.version + ' · ' + (x.fecha_version || ''), { tam: 11, color: a.SUAVE });
-    a.espacio(14);
-    a.regla();
-
-    a.seccion('0 · Portada y control del documento');
-    a.campo('Título del proyecto', d.project[0].title || d.title);
-    a.campo('Código o expediente', d.dmp_id.identifier);
-    a.campo('Institución responsable', x.institucion);
-    a.campo('Financiación', [d.project[0].funding[0].name,
-      d.project[0].funding[0].grant_id.identifier].filter(Boolean).join(' · '));
-    a.campo('Estado de la financiación', etiqueta(M.ESTADO_FINANCIACION, d.project[0].funding[0].funding_status));
-    a.campo('Persona responsable', [d.contact.name, d.contact.mbox,
-      d.contact.contact_id.identifier].filter(Boolean).join(' · '));
-
-    a.seccion('1 · Resumen de la gestión de datos');
-    a.parrafo(d.description || '— sin cumplimentar —',
-      { color: d.description ? a.TINTA : a.FALTA });
-
-    a.seccion('2 · Conjuntos de datos', d.dataset.length + ' conjuntos');
-    if (!d.dataset.length) {
-      a.pendiente('El plan no declara ningún conjunto de datos.');
-    } else {
-      a.tabla(['Id', 'Conjunto', 'Personales', 'Destino'],
-        d.dataset.map(function (c) {
-          return [c.dataset_id.identifier, c.title || 'sin nombre',
-            tresT(c.personal_data), etiqueta(M.DESTINO, c.x_destino) || 'sin decidir'];
-        }), [7, 46, 20, 27]);
-    }
-    d.dataset.forEach(function (c) { fichaConjunto(a, c, M); });
-
-    seccionTema(a, doc, 'documentacion', '5 · Documentación y metadatos');
-    a.seccion('6 · Marco legal y ético');
-    a.pendiente('Este apartado todavía no tiene campos en el editor.');
-    seccionTema(a, doc, 'almacenamiento', '7 · Almacenamiento, seguridad y acceso');
-    seccionTema(a, doc, 'conservacion', '8 · Conservación y disposición final');
-    seccionTema(a, doc, 'comparticion', '9 · Compartición y publicación');
-    a.seccion('10 · Responsabilidades y recursos');
-    a.pendiente('Este apartado todavía no tiene campos en el editor.');
-  }
-
-  function fichaConjunto(a, c, M) {
-    var id = c.dataset_id.identifier;
-    a.espacio(10);
-    a.sitio(70);
-    a.escribir(id + ' · ' + (c.title || 'sin nombre'), { negrita: true, tam: 12.5 });
-    a.espacio(3);
-    a.parrafo(c.description || '— sin descripción —', { espacio: 5 });
-    a.campo('Clasificación frente al RGPD',
-      'Datos personales: ' + tresT(c.personal_data) +
-      ' · Categoría especial: ' + tresT(c.sensitive_data));
-    a.campo('Origen', etiqueta(M.ORIGEN, c.x_origen), { omitirVacio: true });
-    a.campo('Sistema de recogida u origen', c.x_sistema, { omitirVacio: true });
-    a.campo('Formato y volumen', [c.x_formato, c.x_volumen].filter(Boolean).join(' · '), { omitirVacio: true });
-    a.campo('Nivel de identificabilidad', etiqueta(M.IDENTIFICABILIDAD, c.x_identificabilidad), { omitirVacio: true });
-    a.campo('Identificabilidad intrínseca', c.x_intrinseca, { omitirVacio: true });
-    a.campo('Seudonimización y custodia de la clave', c.x_seudonimizacion, { omitirVacio: true });
-    a.campo('Palabras clave', (c.keyword || []).join(', '), { omitirVacio: true });
-    a.campo('Aseguramiento de la calidad', c.data_quality_assurance, { omitirVacio: true });
-    a.campo('Utilidad fuera del proyecto', c.x_utilidad, { omitirVacio: true });
-    a.campo('Persona responsable', c.x_responsable, { omitirVacio: true });
-  }
-
-  function seccionTema(a, doc, tema, titulo) {
-    var t = global.Modelo.TEMAS[tema];
-    a.seccion(titulo);
-    t.proyecto.forEach(function (f) { a.campo(f.et, doc.x_pgd[f.k]); });
-    if (!doc.dmp.dataset.length) { return; }
-    a.sub('Por conjunto de datos');
-    doc.dmp.dataset.forEach(function (c) {
-      var algo = t.conjunto.some(function (f) { return String(c[f.k] || '').trim(); });
-      a.espacio(6);
-      a.sitio(40);
-      a.escribir(c.dataset_id.identifier + ' · ' + (c.title || 'sin nombre'),
-        { negrita: true, tam: 10.5 });
-      a.espacio(2);
-      if (!algo) { a.pendiente('Sin decidir para este conjunto.'); return; }
-      t.conjunto.forEach(function (f) {
-        var v = f.tipo === 'select' ? etiqueta(global.Modelo[f.opciones], c[f.k]) : c[f.k];
-        a.campo(f.et, v, { omitirVacio: true });
-      });
-    });
-  }
-
-  /* ================================================================
      Disposición «ec»: los apartados de la plantilla de la Comisión.
      Se citan por su título, nunca por su número: la Comisión los
      renumera al revisar la plantilla y las referencias numéricas
      quedarían desfasadas.
      ================================================================ */
-  /* Qué responde el plan a cada indicación del formulario europeo.
-     La clave es el identificador que genera `preguntas-ec.js` leyendo
-     el DOCX oficial. Lo que no tiene entrada aquí sale marcado como
-     pendiente: omitirlo en silencio haría que se pasara por alto. */
+  /* Qué responde el plan a cada indicación del formulario europeo. La
+     clave es el identificador que genera `preguntas-ec.js` leyendo el
+     DOCX oficial, de modo que si la Comisión revisa la plantilla se
+     vuelve a generar y se ve enseguida qué identificadores han
+     cambiado. Las cuarenta y dos tienen respuesta; una que no la
+     tuviera saldría marcada, porque omitirla en silencio haría que se
+     pasara por alto. */
   function respuestasEC(a, doc) {
     var d = doc.dmp, x = doc.x_pgd, M = global.Modelo;
     var hay = d.dataset.length > 0;
 
+    /* Un campo de cada conjunto, uno debajo de otro. */
     function porConjunto(campo, vacio) {
       return function () {
-        if (!hay) { return a.pendiente('No hay conjuntos declarados.'); }
+        if (!hay) { return a.campo('', '', { vacio: 'El plan no declara ningún conjunto de datos.' }); }
         var algo = false;
         d.dataset.forEach(function (c) {
           var v = typeof campo === 'function' ? campo(c) : c[campo];
@@ -345,12 +251,14 @@
           algo = true;
           a.campo(c.dataset_id.identifier + ' · ' + (c.title || 'sin nombre'), v);
         });
-        if (!algo) { a.pendiente(vacio || 'Sin cumplimentar para ningún conjunto.'); }
+        if (!algo) { a.campo('', '', { vacio: vacio || '— sin cumplimentar para ningún conjunto —' }); }
       };
     }
+    /* Los conjuntos en una tabla: es la forma en que las diferencias
+       entre ellos quedan a la vista, que es de lo que trata el plan. */
     function tablaDe(cabeceras, cols, pesos) {
       return function () {
-        if (!hay) { return a.pendiente('No hay conjuntos declarados.'); }
+        if (!hay) { return a.campo('', '', { vacio: 'El plan no declara ningún conjunto de datos.' }); }
         a.tabla(cabeceras, d.dataset.map(function (c) {
           return [c.dataset_id.identifier, c.title || 'sin nombre'].concat(
             cols.map(function (f) { return f(c) || '—'; }));
@@ -358,125 +266,186 @@
       };
     }
     function texto(valor, vacio) {
+      return function () { a.campo('', valor, { vacio: vacio }); };
+    }
+    function campos(lista) {
       return function () {
-        if (String(valor || '').trim()) { a.campo('', valor); }
-        else { a.pendiente(vacio || 'El editor todavía no recoge este campo.'); }
+        lista.forEach(function (par) { a.campo(par[0], par[1], { vacio: par[2] }); });
       };
     }
     function fijo(txt) { return function () { a.parrafo(txt); }; }
+    var muestrasHay = x.x_muestras_hay === 'si';
 
     return {
-      /* Data Summary */
-      ds1: tablaDe(['Id', 'Conjunto', 'Formato'], [function (c) { return c.x_formato; }], [8, 62, 30]),
-      ds2: texto(d.description),
-      ds3: tablaDe(['Id', 'Conjunto', 'Volumen'], [function (c) { return c.x_volumen; }], [8, 48, 44]),
-      ds4: porConjunto(function (c) {
-        return [etiqueta(M.ORIGEN, c.x_origen), c.x_sistema].filter(Boolean).join('. ');
-      }),
-      ds5: function () {
+      /* --- Data Summary ------------------------------------------------
+         El orden es el del formulario de la Comisión, que empieza por la
+         reutilización y no por los formatos. */
+      ds1: function () {
         var r = d.dataset.filter(function (c) {
           return ['reutilizado', 'cedido', 'asistencial'].indexOf(c.x_origen) >= 0;
         });
+        if (!hay) { return a.campo('', '', { vacio: 'El plan no declara ningún conjunto de datos.' }); }
         if (!r.length) {
-          return a.parrafo('El proyecto no reutiliza datos preexistentes: los conjuntos se recogen de nuevo o se derivan de los recogidos.');
+          return a.parrafo('El proyecto no reutiliza datos preexistentes: todos los conjuntos se recogen de nuevo o se derivan de los recogidos.');
         }
         r.forEach(function (c) {
-          a.campo(c.dataset_id.identifier + ' · ' + (c.title || ''),
-            etiqueta(M.ORIGEN, c.x_origen) + (c.x_sistema ? '. Procedencia: ' + c.x_sistema + '.' : '') +
+          a.campo(c.dataset_id.identifier + ' · ' + (c.title || 'sin nombre'),
+            etiqueta(M.ORIGEN, c.x_origen) +
+            (c.x_sistema ? '. Procedencia: ' + c.x_sistema + '.' : '.') +
             (c.description ? ' ' + c.description : ''));
         });
       },
+      ds2: tablaDe(['Id', 'Conjunto', 'Formato'], [function (c) { return c.x_formato; }], [8, 62, 30]),
+      ds3: texto(d.description),
+      ds4: tablaDe(['Id', 'Conjunto', 'Volumen'], [function (c) { return c.x_volumen; }], [8, 48, 44]),
+      ds5: porConjunto(function (c) {
+        return [etiqueta(M.ORIGEN, c.x_origen), c.x_sistema].filter(Boolean).join('. ');
+      }),
       ds6: porConjunto('x_utilidad'),
 
-      /* Making data findable */
-      f1: fijo('El identificador permanente lo asigna el repositorio en el momento del depósito. El repositorio previsto de cada conjunto figura bajo «Making data accessible».'),
+      /* --- Making data findable --------------------------------------- */
+      f1: fijo('Sí. El identificador permanente lo asigna el repositorio en el momento del depósito; el repositorio previsto de cada conjunto figura bajo «Making data accessible».'),
       f2: texto(x.x_esquema),
       f3: tablaDe(['Id', 'Conjunto', 'Términos de búsqueda'],
         [function (c) { return (c.keyword || []).join(', '); }], [8, 34, 58]),
-      f4: fijo('Sí: los metadatos quedan en el catálogo del repositorio elegido, que los expone para su recolección e indización.'),
+      f4: fijo('Sí. Los metadatos quedan en el catálogo del repositorio elegido, que los expone para su recolección e indización por terceros.'),
 
-      /* Making data accessible */
-      ac1: porConjunto('x_repositorio', 'Sin repositorio decidido para ningún conjunto.'),
-      ac2: null,
-      ac3: null,
+      /* --- Making data accessible ------------------------------------- */
+      ac1: porConjunto('x_repositorio', '— sin repositorio decidido para ningún conjunto —'),
+      ac2: texto(x.x_gestiones),
+      ac3: function () {
+        a.parrafo('Sí: el repositorio asigna a cada depósito un identificador permanente y lo resuelve al objeto digital. Los repositorios previstos son:');
+        porConjunto('x_repositorio', '— sin repositorio decidido para ningún conjunto —')();
+      },
       ac4: function () {
-        if (!hay) { return a.pendiente('No hay conjuntos declarados.'); }
+        if (!hay) { return a.campo('', '', { vacio: 'El plan no declara ningún conjunto de datos.' }); }
         a.tabla(['Id', 'Conjunto', 'Acceso'],
           d.dataset.map(function (c) {
             return [c.dataset_id.identifier, c.title || 'sin nombre',
               etiqueta(M.DESTINO, c.x_destino) || 'sin decidir'];
           }), [8, 55, 37]);
+        var alguna = false;
         d.dataset.forEach(function (c) {
           if (c.x_destino && c.x_destino !== 'open' && String(c.x_justificacion || '').trim()) {
+            alguna = true;
             a.campo('Motivo de la restricción · ' + c.dataset_id.identifier, c.x_justificacion);
           }
         });
+        if (!alguna) {
+          var restringidos = d.dataset.filter(function (c) {
+            return c.x_destino && c.x_destino !== 'open';
+          });
+          if (restringidos.length) {
+            a.campo('', '', { vacio: '— falta el motivo de la restricción, y es lo que el formulario pide separar entre razones legales y decisión propia —' });
+          }
+        }
       },
-      ac5: null,
-      ac6: null,
+      ac5: texto(x.x_embargo, '— no se declara embargo alguno —'),
+      ac6: fijo('Sí. Los conjuntos abiertos quedan accesibles por el protocolo normalizado del repositorio, libre y gratuito. Los de acceso controlado se obtienen por el procedimiento de solicitud descrito a continuación, sin que ello altere el protocolo de acceso a los metadatos, que es el mismo y abierto.'),
       ac7: texto(x.x_procedimiento),
       ac8: texto(x.x_procedimiento),
       ac9: texto(x.x_procedimiento),
-      ac10: null,
-      ac11: tablaDe(['Id', 'Conjunto', 'Plazo', 'Lo fija'],
-        [function (c) { return c.x_plazo; }, function (c) { return c.x_plazo_norma; }], [8, 30, 29, 33]),
-      ac12: null,
+      ac10: fijo('Sí. Los metadatos se publican bajo la dedicación al dominio público CC0, conforme al acuerdo de subvención, e incluyen la información necesaria para localizar los datos y solicitar el acceso cuando este sea controlado.'),
+      ac11: function () {
+        tablaDe(['Id', 'Conjunto', 'Plazo', 'Lo fija'],
+          [function (c) { return c.x_plazo; }, function (c) { return c.x_plazo_norma; }], [8, 30, 29, 33])();
+        a.campo('Custodia una vez terminado el proyecto', x.x_custodia_larga);
+        a.parrafo('El registro con los metadatos permanece en el catálogo del repositorio aunque los ficheros dejen de estar disponibles.');
+      },
+      ac12: texto(x.x_software_lectura),
 
-      /* Making data interoperable */
+      /* --- Making data interoperable ---------------------------------- */
       io1: porConjunto(function (c) {
         return [c.x_formato, c.x_vocabularios].filter(Boolean).join('. ');
       }),
-      io2: null,
-      io3: null,
+      io2: texto(x.x_ontologias, '— no se generan vocabularios propios —'),
+      io3: texto(x.x_referencias),
 
-      /* Increase data re-use */
+      /* --- Increase data re-use --------------------------------------- */
       ru1: porConjunto('x_diccionario'),
-      ru2: porConjunto('x_licencia', 'Sin licencia decidida para ningún conjunto.'),
+      ru2: porConjunto('x_licencia', '— sin licencia decidida para ningún conjunto —'),
       ru3: porConjunto('x_utilidad'),
       ru4: texto(x.x_nombrado),
       ru5: porConjunto('data_quality_assurance'),
-      ru6: null,
+      ru6: fijo('Los resultados distintos de los datos figuran bajo «Other research outputs»; la asignación de recursos, bajo «Allocation of resources»; la seguridad, bajo «Data security»; y las cuestiones éticas y legales, bajo «Ethics».'),
 
-      /* Allocation of resources */
-      re1: null,
-      re2: function () {
-        a.campo('Responsable del plan', [d.contact.name, d.contact.mbox].filter(Boolean).join(' · '));
-        porConjunto('x_responsable', 'Sin responsable nombrado por conjunto.')();
-      },
+      /* --- Other research outputs ------------------------------------- */
+      or1: campos([
+        ['Software y código de análisis', x.x_software],
+        ['Protocolos y procedimientos', x.x_protocolos],
+        ['Materiales y otros resultados físicos', x.x_materiales],
+        ['Muestras biológicas', muestrasHay
+          ? [x.x_muestras_tipos, x.x_muestras_lugar].filter(Boolean).join(' ')
+          : (x.x_muestras_hay === 'no' ? 'El proyecto no maneja muestras biológicas.' : ''),
+          '— falta declarar si el proyecto maneja muestras biológicas —']
+      ]),
+      or2: campos([
+        ['Dónde se depositarán', x.x_otros_deposito],
+        ['Con qué licencia', x.x_otros_licencia],
+        ['Destino de las muestras al terminar', muestrasHay ? x.x_muestras_destino : 'No procede.']
+      ]),
+
+      /* --- Allocation of resources ------------------------------------ */
+      re1: texto(x.x_coste),
+      re2: texto(x.x_cobertura),
       re3: function () {
-        a.campo('Bloqueo', x.x_bloqueo);
-        a.campo('Disposición final', x.x_borrado);
+        a.campo('Responsable del plan', [d.contact.name, d.contact.mbox].filter(Boolean).join(' · '));
+        a.campo('Reparto de tareas', x.x_reparto);
+        a.campo('Si alguien deja el proyecto', x.x_relevo);
+        porConjunto('x_responsable', '— sin responsable nombrado por conjunto —')();
       },
-      re4: null,
+      re4: function () {
+        a.campo('Quién custodia los datos cuando el proyecto termina', x.x_custodia_larga);
+        tablaDe(['Id', 'Conjunto', 'Plazo', 'Lo fija'],
+          [function (c) { return c.x_plazo; }, function (c) { return c.x_plazo_norma; }], [8, 30, 29, 33])();
+        a.campo('Coste previsto y con qué se cubre',
+          [x.x_coste, x.x_cobertura].filter(Boolean).join(' '));
+        a.campo('Bloqueo y disposición final',
+          [x.x_bloqueo, x.x_borrado].filter(Boolean).join(' '));
+      },
 
-      /* Data security */
+      /* --- Data security ---------------------------------------------- */
       se1: function () {
         tablaDe(['Id', 'Conjunto', 'Dónde reside', 'Administra'],
           [function (c) { return c.x_emplazamiento; }, function (c) { return c.x_administra; }],
           [8, 28, 35, 29])();
-        porConjunto('x_respaldo', 'Sin respaldo declarado.')();
+        porConjunto('x_respaldo', '— sin copias de seguridad declaradas —')();
         a.campo('Transferencia fuera de su sistema', x.x_transferencia);
         a.campo('Medios que no se utilizarán', x.x_no_usar);
       },
-      se2: porConjunto('x_repositorio', 'Sin repositorio decidido.'),
+      se2: porConjunto('x_repositorio', '— sin repositorio decidido para ningún conjunto —'),
 
-      /* Ethics */
+      /* --- Ethics ------------------------------------------------------ */
       et1: function () {
-        if (!hay) { return a.pendiente('No hay conjuntos declarados.'); }
-        a.tabla(['Id', 'Conjunto', 'Personales', 'Cat. especial', 'Identificabilidad'],
-          d.dataset.map(function (c) {
-            return [c.dataset_id.identifier, c.title || 'sin nombre',
-              tresT(c.personal_data), tresT(c.sensitive_data),
-              etiqueta(M.IDENTIFICABILIDAD, c.x_identificabilidad) || '—'];
-          }), [8, 25, 16, 17, 34]);
-        porConjunto('x_seudonimizacion', 'Sin declarar la custodia de la clave.')();
+        a.campo('Comité de ética y referencia del dictamen', x.x_comite);
+        if (hay) {
+          a.tabla(['Id', 'Conjunto', 'Personales', 'Cat. especial', 'Base legal'],
+            d.dataset.map(function (c) {
+              return [c.dataset_id.identifier, c.title || 'sin nombre',
+                tresT(c.personal_data), tresT(c.sensitive_data),
+                etiqueta(M.BASE_LEGAL, c.x_base_legal) || '—'];
+            }), [8, 22, 15, 16, 39]);
+          a.tabla(['Id', 'Conjunto', 'Identificabilidad'],
+            d.dataset.map(function (c) {
+              return [c.dataset_id.identifier, c.title || 'sin nombre',
+                etiqueta(M.IDENTIFICABILIDAD, c.x_identificabilidad) || '—'];
+            }), [8, 42, 50]);
+          porConjunto('x_seudonimizacion', '— sin declarar la custodia de la clave —')();
+        }
+        a.campo('Evaluación de impacto en protección de datos', etiqueta(M.EIPD, x.x_eipd));
+        a.campo('Cesiones a terceros y encargados de tratamiento', x.x_cesiones);
+        a.campo('Transferencias fuera del Espacio Económico Europeo', x.x_transferencias);
       },
-      et2: null,
+      et2: function () {
+        a.campo('Qué cubre el consentimiento y qué no', x.x_consentimiento);
+        porConjunto('x_alcance', '— sin declarar el alcance del permiso por conjunto —')();
+      },
 
-      /* Other issues */
+      /* --- Other issues ------------------------------------------------ */
       oi1: texto(x.institucion
-        ? 'Los que establezca la política de gestión de datos de ' + x.institucion + '.'
-        : '')
+        ? 'Se siguen los procedimientos de gestión de datos de ' + x.institucion +
+          (String(x.x_esquema || '').trim() ? ', y el esquema de metadatos indicado bajo «Making data findable».' : '.')
+        : '', '— falta la institución responsable, que es de quien dependen esos procedimientos —')
     };
   }
 
@@ -511,13 +480,12 @@
         a.pregunta(q.t);
         var f = resp[q.id];
         if (f) { f(); }
-        else { a.pendiente('El editor todavía no recoge esta cuestión.'); }
+        else { a.pendiente('Esta indicación del formulario no tiene respuesta en el editor.'); }
       });
     });
   }
 
   var DISPOSICIONES = {
-    curso: { fn: disposicionCurso, nombre: 'Formato del curso' },
     ec: { fn: disposicionEC, nombre: 'Formato de la Comisión Europea' }
   };
 
@@ -525,7 +493,7 @@
 
   async function exportar(doc, opciones) {
     opciones = opciones || {};
-    var clave = DISPOSICIONES[opciones.formato] ? opciones.formato : 'curso';
+    var clave = DISPOSICIONES[opciones.formato] ? opciones.formato : 'ec';
     var L = global.PDFLib;
     var pdf = await L.PDFDocument.create();
     var a = await lienzo(pdf, L);
