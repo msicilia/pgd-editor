@@ -65,6 +65,14 @@
       x_pgd: {
         version: '1.0',
         fecha_version: hoy(),
+        /* Una versión abierta es un borrador: se puede reexportar las
+           veces que haga falta con el mismo número. Una cerrada es la
+           que se ha entregado a alguien, y a partir de ahí el número
+           solo puede subir. Es lo que permite saber, mirando dos PDF,
+           cuál es posterior. */
+        estado: 'abierta',
+        minima: '',
+        sello: '',
         institucion: '',
         historial: []
       }
@@ -92,17 +100,17 @@
      Lo que cabe en el estándar RDA usa sus nombres. Lo que no, lleva
      prefijo `x_`. */
   var NIVELES = [
-    { id: 1, titulo: 'Lo esencial',
-      pista: 'Con esto el conjunto ya existe y se puede nombrar en el resto del documento.',
+    { id: 1, titulo: 'Identificación y clasificación',
+      pista: 'Con estos cuatro campos el conjunto queda constituido y puede citarse por su identificador en el resto del documento. Son, además, los que el estándar RDA exige.',
       campos: ['title', 'description', 'personal_data', 'sensitive_data'] },
-    { id: 2, titulo: 'De dónde sale y qué forma tiene',
-      pista: 'El origen determina casi todo lo demás: un dato preexistente arrastra su propio circuito de autorizaciones.',
+    { id: 2, titulo: 'Procedencia y formato',
+      pista: 'El origen condiciona el resto del plan. Un dato preexistente de origen asistencial requiere una habilitación propia y sigue el circuito de autorización que tenga establecido la institución.',
       campos: ['x_origen', 'x_sistema', 'x_formato', 'x_volumen'] },
     { id: 3, titulo: 'Identificabilidad',
-      pista: 'El campo que más discusión genera dentro de un equipo, y el que más veces se rellena mal. Conviene mirarlo de frente una vez.',
+      pista: 'Determina la base legal aplicable, el emplazamiento admisible y lo que podrá compartirse. Conviene resolverlo con precisión una vez, porque todo lo demás se apoya en ello.',
       campos: ['x_identificabilidad', 'x_intrinseca', 'x_seudonimizacion'] },
-    { id: 4, titulo: 'Para quién sirve',
-      pista: 'La ficha describe qué es el conjunto. Qué se hace con él —dónde vive, cuánto dura, con quién se comparte— se decide en los apartados 7, 8 y 9, porque allí se ven los conjuntos juntos y las diferencias saltan a la vista.',
+    { id: 4, titulo: 'Documentación para la reutilización',
+      pista: 'La ficha describe qué es el conjunto. Las decisiones sobre él —emplazamiento, plazo de conservación y destino— se toman en los apartados 7, 8 y 9, donde los conjuntos se presentan juntos y sus diferencias quedan a la vista.',
       campos: ['keyword', 'data_quality_assurance', 'x_utilidad', 'x_responsable'] }
   ];
 
@@ -178,13 +186,13 @@
     documentacion: {
       proyecto: [
         { k: 'x_nombrado', req: 'recomendado', et: 'Convención de nombres y versiones de fichero', tipo: 'textarea',
-          ayuda: 'Cualquier convención explícita es mejor que «datos_final_v2_revisado_BUENO.csv». Una que funciona: proyecto_conjunto_versión_fecha, con la fecha en año-mes-día para que ordene sola.' },
+          ayuda: 'Cualquier convención declarada es preferible a ninguna. Una habitual es proyecto_conjunto_versión_fecha, con la fecha en formato año-mes-día, que ordena correctamente por orden alfabético.' },
         { k: 'x_esquema', req: 'recomendado', et: 'Esquema de metadatos del depósito', tipo: 'text',
           ayuda: 'Lo impone en gran medida el repositorio. Basta con decir cuál se prevé.' }
       ],
       conjunto: [
         { k: 'x_diccionario', req: 'recomendado', et: 'Diccionario de variables', tipo: 'textarea',
-          ayuda: 'Dónde vive, quién lo mantiene y desde cuándo existe. No hay que pegarlo aquí.' },
+          ayuda: 'Dónde reside, quién lo mantiene y desde cuándo existe. No es necesario reproducir su contenido en el plan.' },
         { k: 'x_vocabularios', req: 'recomendado', et: 'Estándares y vocabularios', tipo: 'textarea',
           ayuda: 'Con qué se codifica cada variable clave, y en qué versión. Lo normal es que se herede del sistema de origen: el trabajo no es escoger, es no perderlo y declarar cuál es.' }
       ],
@@ -193,7 +201,7 @@
     almacenamiento: {
       proyecto: [
         { k: 'x_no_usar', req: 'recomendado', et: 'Qué no se usará', tipo: 'textarea',
-          ayuda: 'Nube personal, correo electrónico, dispositivos sin cifrar, herramientas en línea no autorizadas, asistentes de inteligencia artificial de uso general. Conviene decir al lado qué se usa en su lugar: prohibir sin ofrecer salida garantiza que la regla se incumpla.' },
+          ayuda: 'Nube personal, correo electrónico, dispositivos sin cifrar, herramientas en línea no autorizadas y asistentes de inteligencia artificial de uso general. Conviene indicar junto a cada exclusión la alternativa prevista: una restricción sin alternativa no se cumple.' },
         { k: 'x_transferencia', req: 'recomendado', et: 'Cómo viajan los datos cuando salen de su sistema', tipo: 'textarea',
           ayuda: 'Qué canal, quién lo autoriza y con qué protección.' }
       ],
@@ -202,7 +210,7 @@
           ayuda: 'El nombre del sistema concreto. «Servidores institucionales» no se puede comprobar.' },
         { k: 'x_administra', req: 'recomendado', et: 'Quién lo administra', tipo: 'text' },
         { k: 'x_respaldo', req: 'recomendado', et: 'Copias de seguridad', tipo: 'textarea',
-          ayuda: 'Qué está cubierto y qué no, con qué frecuencia, cuánta retención, y si alguien ha probado a restaurar. Se pregunta, no se supone: es la afirmación que más veces resulta falsa al comprobarla.' }
+          ayuda: 'Qué sistemas están cubiertos y cuáles no, con qué frecuencia, cuánta retención y si se ha verificado alguna restauración. Conviene confirmarlo con el servicio responsable en lugar de darlo por supuesto.' }
       ],
       columnas: [{ k: 'x_emplazamiento', et: 'Sistema' }, { k: 'x_administra', et: 'Administra' }]
     },
@@ -230,7 +238,7 @@
       ],
       conjunto: [
         { k: 'x_destino', req: 'obligatorio', et: 'Destino', tipo: 'select', opciones: 'DESTINO',
-          ayuda: 'Se decide por conjunto. Decidir en bloque lleva a no publicar ni siquiera lo que no tenía ningún problema.' },
+          ayuda: 'Se decide conjunto por conjunto. Una decisión en bloque aplica a todos el régimen del conjunto más restringido, y deja sin publicar lo que no lo requería.' },
         { k: 'x_justificacion', req: 'obligatorio', et: 'Justificación, si no es abierto', tipo: 'textarea',
           ayuda: 'De dónde viene la restricción: el RGPD, el consentimiento o un tercero. «Por motivos de confidencialidad» no identifica ninguno de los tres.' },
         { k: 'x_repositorio', req: 'recomendado', et: 'Repositorio previsto', tipo: 'text',
@@ -268,32 +276,32 @@
      obtiene al exportar, no al editar: así se escribe una vez y se
      vuelca en el formulario que toque.                               */
   var SECCIONES = [
-    { grupo: 'Identificación', items: [
+    { grupo: 'Documento', items: [
       { id: 'portada', n: '0', titulo: 'Portada y control del documento', ud: 'D9·01' },
       { id: 'resumen', n: '1', titulo: 'Resumen de la gestión de datos', ud: 'D9·02' }
     ]},
-    { grupo: 'Qué datos hay', items: [
+    { grupo: 'Datos', items: [
       { id: 'conjuntos', n: '2', titulo: 'Conjuntos de datos', hijos: true, ud: 'D9·03' },
       { id: 'muestras', n: '3', titulo: 'Muestras biológicas', pendiente: 'D9·04',
         adelanto: 'Solo si el proyecto maneja muestras. Qué muestras, con qué consentimiento, quién custodia el vínculo con el dato y cuál es su destino final.' },
       { id: 'otros', n: '4', titulo: 'Otros resultados', pendiente: 'D9·05',
         adelanto: 'Software, código de análisis, protocolos y modelos. Se pueden publicar en abierto sin restricción legal, y son la vía más accesible a la ciencia abierta para un proyecto con datos restringidos.' }
     ]},
-    { grupo: 'Cómo se entienden', items: [
+    { grupo: 'Documentación', items: [
       { id: 'documentacion', n: '5', titulo: 'Documentación y metadatos', tema: 'documentacion', ud: 'D10' }
     ]},
-    { grupo: 'Qué lo ampara', items: [
+    { grupo: 'Marco legal', items: [
       { id: 'legal', n: '6', titulo: 'Marco legal y ético', pendiente: 'D11',
         adelanto: 'Base legal de cada tratamiento, qué cubre el consentimiento y qué no, identificabilidad y custodia de la clave, cesiones y encargados.' }
     ]},
-    { grupo: 'Dónde viven', items: [
+    { grupo: 'Custodia y conservación', items: [
       { id: 'almacenamiento', n: '7', titulo: 'Almacenamiento, seguridad y acceso', tema: 'almacenamiento', ud: 'D12·01 a D12·04' },
       { id: 'conservacion', n: '8', titulo: 'Conservación y disposición final', tema: 'conservacion', ud: 'D12·05 y D12·06' }
     ]},
-    { grupo: 'Con quién', items: [
+    { grupo: 'Difusión', items: [
       { id: 'comparticion', n: '9', titulo: 'Compartición y publicación', tema: 'comparticion', ud: 'D13' }
     ]},
-    { grupo: 'Quién responde', items: [
+    { grupo: 'Gestión', items: [
       { id: 'responsabilidades', n: '10', titulo: 'Responsabilidades y recursos', pendiente: 'D14',
         adelanto: 'Reparto de tareas con nombres de personas, coste y partidas, y qué ocurre si alguien deja el proyecto.' }
     ]},
@@ -444,13 +452,85 @@
     return base;
   }
 
-  /* Al exportar se sube la versión: el número menor si no ha cambiado
-     ninguna decisión, y eso lo decide quien exporta. Aquí solo se
-     ofrece el siguiente de cada tipo. */
+  /* --- Versiones -------------------------------------------------------
+     Dos números, como recomienda D9·01: el primero para los cambios que
+     obligan a avisar a alguien, el segundo para los que no.           */
+
   function subirVersion(v, mayor) {
     var p = String(v || '1.0').split('.');
     var a = parseInt(p[0], 10) || 1, b = parseInt(p[1], 10) || 0;
     return mayor ? (a + 1) + '.0' : a + '.' + (b + 1);
+  }
+
+  function partesVersion(v) {
+    var p = String(v || '0.0').split('.');
+    return [parseInt(p[0], 10) || 0, parseInt(p[1], 10) || 0];
+  }
+
+  /* -1 si a es anterior, 0 si iguales, 1 si a es posterior */
+  function compararVersion(a, b) {
+    var x = partesVersion(a), y = partesVersion(b);
+    if (x[0] !== y[0]) { return x[0] < y[0] ? -1 : 1; }
+    if (x[1] !== y[1]) { return x[1] < y[1] ? -1 : 1; }
+    return 0;
+  }
+
+  function versionValida(v) {
+    return /^\d+\.\d+$/.test(String(v || '').trim());
+  }
+
+  /* Una huella del contenido, para detectar que el JSON incrustado en
+     un PDF cerrado se ha modificado por fuera.
+
+     Conviene ser claro sobre su alcance: esto detecta manipulaciones
+     accidentales y descuidos, no a alguien decidido a falsificar un
+     documento. Para eso haría falta firma criptográfica, que a su vez
+     necesita una autoridad que custodie las claves. Si el sello no
+     cuadra, la aplicación avisa; no impide nada. */
+  function huella(txt) {
+    var h1 = 0x811c9dc5, h2 = 0x01000193;
+    for (var i = 0; i < txt.length; i++) {
+      var c = txt.charCodeAt(i);
+      h1 = ((h1 ^ c) >>> 0) * 16777619 >>> 0;
+      h2 = ((h2 + c * (i + 1)) >>> 0) * 2654435761 >>> 0;
+    }
+    return ('00000000' + h1.toString(16)).slice(-8) +
+           ('00000000' + h2.toString(16)).slice(-8);
+  }
+
+  function contenidoParaSello(doc) {
+    var copia = JSON.parse(JSON.stringify(doc));
+    delete copia.x_pgd.sello;
+    copia.dmp.modified = '';
+    return JSON.stringify(copia);
+  }
+
+  function sellar(doc) {
+    doc.x_pgd.estado = 'cerrada';
+    doc.x_pgd.minima = doc.x_pgd.version;
+    doc.x_pgd.sello = huella(contenidoParaSello(doc));
+    return doc;
+  }
+
+  function selloCorrecto(doc) {
+    if (!doc.x_pgd.sello) { return null; }          // no venía sellado
+    return doc.x_pgd.sello === huella(contenidoParaSello(doc));
+  }
+
+  /* ¿Se puede exportar tal como está? Si la versión que hay es una que
+     ya se cerró, hay que subirla antes: si no, circularían dos PDF
+     distintos con el mismo número. */
+  function puedeExportar(doc) {
+    var x = doc.x_pgd;
+    if (!versionValida(x.version)) {
+      return { ok: false, motivo: 'La versión debe tener la forma «1.0»: dos números separados por un punto.' };
+    }
+    if (x.minima && compararVersion(x.version, x.minima) <= 0) {
+      return { ok: false,
+        motivo: 'La versión ' + x.minima + ' ya se cerró. Para exportar hay que subir el número: ' +
+                'si no, circularían dos documentos distintos con la misma versión.' };
+    }
+    return { ok: true };
   }
 
   global.Modelo = {
@@ -463,6 +543,11 @@
     aJSON: aJSON,
     desdeJSON: desdeJSON,
     subirVersion: subirVersion,
+    compararVersion: compararVersion,
+    versionValida: versionValida,
+    puedeExportar: puedeExportar,
+    sellar: sellar,
+    selloCorrecto: selloCorrecto,
     hoy: hoy,
     SECCIONES: SECCIONES,
     TEMAS: TEMAS,

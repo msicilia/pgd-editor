@@ -88,7 +88,13 @@
   /* La revisión y la exportación estaban al final del índice, y eran lo
      que más falta hace tener siempre a mano. Suben a la barra. */
   function pintarBarra() {
-    $('#etiqueta-version').textContent = 'v' + (doc.x_pgd.version || '1.0');
+    var cerrada = doc.x_pgd.estado === 'cerrada';
+    var ev = $('#etiqueta-version');
+    ev.textContent = 'v' + (doc.x_pgd.version || '1.0') + (cerrada ? ' · cerrada' : '');
+    ev.className = 'ver' + (cerrada ? ' cerrada' : '');
+    ev.title = cerrada
+      ? 'Esta versión se ha cerrado. Para exportar de nuevo hay que subir el número.'
+      : 'Borrador: se puede reexportar con el mismo número.';
     $('#titulo-barra').textContent = doc.dmp.title || 'Plan de gestión de datos';
     var n = Modelo.comprobar(doc).length;
     var ins = $('#insignia');
@@ -113,17 +119,27 @@
     var m = el('div', 'menu-flotante');
     m.setAttribute('role', 'menu');
 
-    Object.keys(PDF.DISPOSICIONES).forEach(function (k) {
+    var permiso = Modelo.puedeExportar(doc);
+
+    function opcion(rotulo, detalle, cerrar) {
       var op = el('button');
       op.type = 'button';
       op.setAttribute('role', 'menuitem');
-      op.appendChild(document.createTextNode('PDF · ' + PDF.DISPOSICIONES[k].nombre));
-      op.appendChild(el('small', null, k === 'curso'
-        ? 'Por decisiones, en el orden de la plantilla del curso'
-        : 'Volcado a los apartados de la plantilla europea'));
-      op.addEventListener('click', function () { cerrarMenus(); exportarPDF(k, null); });
+      op.appendChild(document.createTextNode(rotulo));
+      op.appendChild(el('small', null, detalle));
+      if (!permiso.ok) { op.disabled = true; }
+      op.addEventListener('click', function () { cerrarMenus(); exportarPDF('ec', cerrar); });
       m.appendChild(op);
-    });
+      return op;
+    }
+
+    opcion('PDF · borrador', 'La versión queda abierta: se puede volver a exportar con el mismo número.', false);
+    opcion('PDF · versión cerrada', 'Se entrega. A partir de ahí el número solo puede subir.', true);
+
+    if (!permiso.ok) {
+      var av = el('div', 'menu-aviso', permiso.motivo);
+      m.appendChild(av);
+    }
     m.appendChild(el('hr'));
     var oj = el('button');
     oj.type = 'button';
@@ -158,8 +174,8 @@
 
   /* ================= ÍNDICE ========================================= */
 
-  var PUNTOS = { lleno: '●', parcial: '◐', vacio: '○', pendiente: '·' };
-  var PUNTOS_T = { lleno: 'completo', parcial: 'a medias', vacio: 'vacío', pendiente: 'todavía sin campos' };
+  var PUNTOS_T = { lleno: 'Completo', parcial: 'A medias', vacio: 'Sin cumplimentar',
+    pendiente: 'Todavía sin campos en el editor' };
 
   function pintarIndice() {
     var nav = $('#indice');
@@ -173,8 +189,9 @@
         b.type = 'button';
         if (vista.seccion === it.id && !vista.conjunto) { b.setAttribute('aria-current', 'true'); }
 
-        var p = el('span', 'punto ' + estado, PUNTOS[estado]);
+        var p = el('span', 'punto ' + estado);
         p.title = PUNTOS_T[estado];
+        p.setAttribute('aria-label', PUNTOS_T[estado]);
         b.appendChild(p);
 
         var t = el('span', 'rot');
@@ -228,19 +245,43 @@
     });
   }
 
-  function eliminarConjunto(c, alTerminar) {
+  /* Confirmación propia. El diálogo del navegador no se muestra dentro
+     de la aplicación de escritorio: confirm() devuelve falso sin
+     preguntar nada, y la acción no llegaba a ejecutarse nunca. */
+  function confirmar(anfitrion, mensaje, rotulo, alConfirmar) {
+    var previa = anfitrion.querySelector('.confirmar');
+    if (previa) { previa.remove(); }
+    var caja = el('div', 'confirmar');
+    caja.appendChild(el('p', null, mensaje));
+    var fila = el('div', 'fila-botones');
+    var si = el('button', 'peligro', rotulo);
+    si.type = 'button';
+    si.addEventListener('click', function () { caja.remove(); alConfirmar(); });
+    var no = el('button', null, 'Cancelar');
+    no.type = 'button';
+    no.addEventListener('click', function () { caja.remove(); });
+    fila.appendChild(si); fila.appendChild(no);
+    caja.appendChild(fila);
+    anfitrion.appendChild(caja);
+    si.focus();
+  }
+
+  function eliminarConjunto(c, anfitrion, alTerminar) {
     var id = c.dataset_id.identifier;
-    if (tieneContenido(c)) {
-      var n = ['x_diccionario', 'x_emplazamiento', 'x_plazo', 'x_destino']
-        .filter(function (k) { return String(c[k] || '').trim(); }).length;
-      var extra = n ? '\n\nTiene decisiones tomadas en otros apartados, que se perderán también.' : '';
-      if (!confirm('¿Eliminar ' + id + (c.title ? ' · ' + c.title : '') + '?' + extra)) { return; }
+    function hazlo() {
+      var i = doc.dmp.dataset.indexOf(c);
+      if (i >= 0) { doc.dmp.dataset.splice(i, 1); }
+      delete temaAbierto[id];
+      if (alTerminar) { alTerminar(); } else { cambiado(true); }
+      decir(id + ' eliminado. El identificador no vuelve a asignarse.');
     }
-    var i = doc.dmp.dataset.indexOf(c);
-    if (i >= 0) { doc.dmp.dataset.splice(i, 1); }
-    delete temaAbierto[id];
-    if (alTerminar) { alTerminar(); } else { cambiado(true); }
-    decir(id + ' eliminado. El identificador no se reutiliza.');
+    if (!tieneContenido(c)) { return hazlo(); }
+    var n = ['x_diccionario', 'x_emplazamiento', 'x_plazo', 'x_destino']
+      .filter(function (k) { return String(c[k] || '').trim(); }).length;
+    confirmar(anfitrion,
+      'Se eliminará ' + id + (c.title ? ' · ' + c.title : '') + ' de todos los apartados' +
+      (n ? ', incluidas las decisiones tomadas en otros apartados' : '') + '.',
+      'Eliminar ' + id, hazlo);
   }
 
   function anadirConjunto() {
@@ -324,10 +365,10 @@
   }
 
   var PISTA_TEMA = {
-    documentacion: 'El apartado 5 responde a una sola pregunta: ¿alguien que no estuvo en el proyecto podrá entender estos datos? La convención de nombres es del proyecto entero; el diccionario y los vocabularios, de cada conjunto.',
-    almacenamiento: 'Un proyecto ordinario tiene datos en tres sitios a la vez: el sistema de captura, el espacio de trabajo y el entorno de análisis. Escribir que «residen en la plataforma institucional» cuando además hay dos copias más es incompleto, y lo que queda fuera suele ser lo peor protegido.',
-    conservacion: 'No hay un plazo, hay varios: sobre los mismos datos concurren obligaciones de origen distinto. Y cuando varias normas fijan plazos distintos rige el más largo, porque cumplir el corto no exime del otro.',
-    comparticion: 'Tres destinos posibles, y no son una escala de mejor a peor. Un proyecto casi nunca tiene un destino único: suponerlo lleva a aplicar a todo el régimen del conjunto más sensible, y a no publicar ni siquiera lo que no tenía ningún problema.'
+    documentacion: 'Este apartado responde a una sola pregunta: si alguien ajeno al proyecto recibiera estos datos, ¿podría interpretarlos? La convención de nombres es del proyecto; el diccionario de variables y los vocabularios, de cada conjunto.',
+    almacenamiento: 'Un proyecto ordinario mantiene datos en tres emplazamientos simultáneos: el sistema de captura, el espacio de trabajo y el entorno de análisis. Declarar solo el primero deja fuera copias que suelen estar peor protegidas.',
+    conservacion: 'Sobre los mismos datos concurren obligaciones de origen distinto, cada una con su propio plazo. Cuando varias normas fijan plazos diferentes rige el más largo: cumplir el más corto no exime del otro.',
+    comparticion: 'Tres destinos posibles, que no constituyen una escala de mejor a peor. Un proyecto rara vez tiene un destino único, y suponerlo lleva a aplicar a todos los conjuntos el régimen del más restringido.'
   };
 
   function valorCorto(c, col) {
@@ -488,7 +529,7 @@
 
   /* --- 0 · portada --------------------------------------------------- */
   function panelPortada(p) {
-    p.appendChild(pista('Lo que permite saber, dentro de diez años, de qué proyecto es este documento y a quién preguntar.'));
+    p.appendChild(pista('Identifica el proyecto al que corresponde el documento y a quién dirigirse. Es lo que permitirá situarlo dentro de diez años.'));
 
     p.appendChild(grupoCampos('El proyecto', [
       campoTexto('Título del proyecto', 'dmp.title', 'Tal como figura en la resolución, si ya está concedido', true, null, 'obligatorio'),
@@ -503,7 +544,7 @@
     ]));
 
     p.appendChild(grupoCampos('Persona responsable', [
-      pista('Un nombre, no un servicio ni «el equipo investigador». Es a quien se dirigirá quien tenga una pregunta sobre estos datos dentro de diez años.'),
+      pista('Una persona concreta, no un servicio ni «el equipo investigador». Es a quien se dirigirá quien tenga una consulta sobre estos datos.'),
       dos(
         campoTexto('Nombre y apellidos', 'dmp.contact.name', '', false, null, 'obligatorio'),
         campoTexto('Correo electrónico', 'dmp.contact.mbox', '', false, null, 'recomendado')
@@ -513,7 +554,7 @@
     ]));
 
     p.appendChild(grupoCampos('Control del documento', [
-      pista('El plan se escribe antes de empezar, cuando muchas cosas son estimaciones, y se corrige cuando la realidad las desmiente. Sin versión no se puede saber cuál estaba vigente cuando ocurrió algo.'),
+      pista('El plan se redacta antes de comenzar, cuando parte de su contenido son estimaciones, y se corrige a medida que se concretan. Sin control de versiones no puede determinarse cuál estaba vigente en un momento dado.'),
       dos(
         campoTexto('Versión', 'x_pgd.version'),
         campoFecha('Fecha', 'x_pgd.fecha_version')
@@ -526,8 +567,8 @@
 
   /* --- 1 · resumen ---------------------------------------------------- */
   function panelResumen(p) {
-    p.appendChild(pista('Media página: qué datos hay, dónde vivirán, quién responde de ellos y qué se hará con ellos al terminar. Es el párrafo que un evaluador lee entero mientras hojea el resto.'));
-    p.appendChild(destacado('Se escribe el último', 'Cuando el resto del documento ya está decidido. Escribirlo primero produce resúmenes que prometen cosas que los apartados siguientes acaban desmintiendo.'));
+    p.appendChild(pista('Media página: qué conjuntos hay, en qué sistemas residirán, quién responde de ellos y cuál será su destino al cerrar el proyecto. Es el párrafo que un evaluador lee íntegro.'));
+    p.appendChild(destacado('Se escribe el último', 'Se redacta cuando el resto del documento ya está decidido. Escribirlo antes produce resúmenes que comprometen lo que los apartados siguientes acaban desmintiendo.'));
     p.appendChild(campoArea('Resumen de la gestión de datos', 'dmp.description',
       'Si este párrafo se puede pegar en otro proyecto sin cambiar nada, todavía no describe este.', 8));
     var a = bloqueAvisos(avisosDe('resumen'));
@@ -536,12 +577,12 @@
 
   /* --- 2 · conjuntos · lista ------------------------------------------ */
   function panelConjuntos(p) {
-    p.appendChild(pista('Un proyecto no tiene «unos datos»: tiene varios conjuntos con orígenes, identificabilidades y destinos distintos. Aquí se rellena lo esencial de varios a la vez; para la ficha completa de uno, se abre su detalle.'));
+    p.appendChild(pista('Un proyecto no maneja «unos datos», sino varios conjuntos con orígenes, identificabilidades y destinos distintos. Desde aquí se cumplimenta lo esencial de varios a la vez; la ficha completa de cada uno se abre en su detalle.'));
 
     if (!doc.dmp.dataset.length) {
       var v = el('div', 'vacio');
       v.appendChild(el('p', null, 'Todavía no hay ningún conjunto de datos.'));
-      var ayuda = el('p', 'menor', 'Un buen punto de partida es recorrer el proyecto por orden: qué se recoge de nuevo, qué se extrae de sistemas que ya existen, qué producen las pruebas, qué llega de fuera y qué produce el análisis. Lo último es lo que más se olvida, y suele ser lo único que se puede compartir.');
+      var ayuda = el('p', 'menor', 'Conviene recorrer el proyecto en orden temporal: qué se recoge de nuevo, qué se extrae de sistemas preexistentes, qué producen las pruebas, qué procede de terceros y qué genera el análisis. Lo último es lo que más se omite, y con frecuencia es lo único compartible.');
       v.appendChild(ayuda);
       var b = el('button', 'principal', 'Añadir el primer conjunto');
       b.type = 'button';
@@ -586,7 +627,7 @@
     borrar.type = 'button';
     borrar.title = 'Eliminar ' + id;
     borrar.setAttribute('aria-label', 'Eliminar ' + id);
-    borrar.addEventListener('click', function () { eliminarConjunto(c); });
+    borrar.addEventListener('click', function () { eliminarConjunto(c, caja); });
     cab.appendChild(borrar);
     caja.appendChild(cab);
 
@@ -621,8 +662,17 @@
     if (!c) { return irA('conjuntos', null); }
     var id = c.dataset_id.identifier;
 
-    p.appendChild(cabecera(null, id + (c.title ? ' · ' + c.title : ''), true));
-    p.appendChild(pista('La ficha tiene cuatro niveles. El primero basta para que el conjunto exista; los demás se abren cuando hay algo que decir. No hace falta llenarlos todos hoy.'));
+    var cab = cabecera(null, id + (c.title ? ' · ' + c.title : ''), true);
+    var acc = el('div', 'cab-acciones');
+    var bb = el('button', 'borrar', 'Eliminar ' + id);
+    bb.type = 'button';
+    bb.addEventListener('click', function () {
+      eliminarConjunto(c, cab, function () { irA('conjuntos', null); cambiado(); });
+    });
+    acc.appendChild(bb);
+    cab.appendChild(acc);
+    p.appendChild(cab);
+    p.appendChild(pista('La ficha se organiza en cuatro niveles. El primero basta para que el conjunto quede constituido; los demás se despliegan cuando haya información que consignar, y no es necesario completarlos de una sola vez.'));
 
     Modelo.NIVELES.forEach(function (n) {
       p.appendChild(nivelCaja(c, n));
@@ -647,16 +697,6 @@
       nav.appendChild(sig);
     }
     if (nav.childNodes.length) { p.appendChild(nav); }
-
-    var zona = el('div', 'zona-borrar');
-    var bb = el('button', 'borrar', 'Eliminar ' + id);
-    bb.type = 'button';
-    bb.addEventListener('click', function () {
-      eliminarConjunto(c, function () { irA('conjuntos', null); cambiado(); });
-    });
-    zona.appendChild(bb);
-    zona.appendChild(el('span', 'menor', 'Se elimina de todos los apartados. El identificador ' + id + ' no se reutiliza.'));
-    p.appendChild(zona);
   }
 
   function nivelCaja(c, n) {
@@ -831,15 +871,19 @@
        aquí y no al guardar. La regla del curso: si el cambio obliga a
        avisar a alguien, sube el primer número; si no, el segundo. */
     var ver = el('div', 'version-caja');
-    ver.appendChild(el('p', 'et', 'Versión que se va a exportar'));
+    ver.appendChild(el('p', 'et', 'Versión'));
     var fv = el('div', 'fila-botones');
-    fv.appendChild(el('span', 'version-actual', 'v' + doc.x_pgd.version));
+    var va = el('span', 'version-actual' + (doc.x_pgd.estado === 'cerrada' ? ' cerrada' : ''),
+      'v' + doc.x_pgd.version + (doc.x_pgd.estado === 'cerrada' ? ' · cerrada' : ' · borrador'));
+    fv.appendChild(va);
     var bmen = el('button', null, '→ v' + Modelo.subirVersion(doc.x_pgd.version, false));
     bmen.type = 'button';
     bmen.title = 'Se ha rellenado un hueco o precisado una cifra, pero ninguna decisión cambia';
     bmen.addEventListener('click', function () {
       doc.x_pgd.version = Modelo.subirVersion(doc.x_pgd.version, false);
       doc.x_pgd.fecha_version = Modelo.hoy();
+      doc.x_pgd.estado = 'abierta';
+      doc.x_pgd.sello = '';
       cambiado(true);
     });
     fv.appendChild(bmen);
@@ -849,11 +893,18 @@
     bmay.addEventListener('click', function () {
       doc.x_pgd.version = Modelo.subirVersion(doc.x_pgd.version, true);
       doc.x_pgd.fecha_version = Modelo.hoy();
+      doc.x_pgd.estado = 'abierta';
+      doc.x_pgd.sello = '';
       cambiado(true);
     });
     fv.appendChild(bmay);
     ver.appendChild(fv);
-    ver.appendChild(el('p', 'menor', 'Si el cambio obliga a avisar a alguien —al comité, al financiador, a los socios— sube el primer número. Si no, el segundo.'));
+    ver.appendChild(el('p', 'menor',
+      'Si el cambio obliga a avisar a alguien —al comité, al financiador, a los socios— sube el primer número. Si no, el segundo.'));
+    if (doc.x_pgd.minima) {
+      ver.appendChild(el('p', 'menor',
+        'La versión ' + doc.x_pgd.minima + ' ya se cerró, de modo que el número solo puede subir a partir de ahí.'));
+    }
     acc.appendChild(ver);
 
     var fila = el('div', 'fila-botones');
@@ -884,11 +935,13 @@
     bn.type = 'button';
     bn.style.marginTop = '12px';
     bn.addEventListener('click', function () {
-      if (!confirm('Se descartará el plan que hay ahora. ¿Continuar?')) { return; }
-      doc = Modelo.documentoNuevo();
-      irA('portada', null);
-      guardarBorrador();
-      decir('Plan nuevo.');
+      confirmar(acc, 'Se descartará el plan que hay ahora y se empezará uno vacío.',
+        'Empezar de nuevo', function () {
+          doc = Modelo.documentoNuevo();
+          irA('portada', null);
+          guardarBorrador();
+          decir('Plan nuevo.');
+        });
     });
     acc.appendChild(bn);
     p.appendChild(acc);
@@ -1079,25 +1132,26 @@
     var b = (doc.dmp.title || 'plan-gestion-datos').toLowerCase()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'plan';
-    return b + (formato === 'ec' ? '_EC' : '') +
-      '_v' + (doc.x_pgd.version || '1.0') + '_' +
-      (doc.x_pgd.fecha_version || Modelo.hoy()) + '.' + ext;
+    return b + '_v' + (doc.x_pgd.version || '1.0') +
+      (doc.x_pgd.estado === 'cerrada' ? '' : '_borrador') +
+      '_' + (doc.x_pgd.fecha_version || Modelo.hoy()) + '.' + ext;
   }
 
-  async function exportarPDF(formato, b) {
-    var rotulo = b ? b.textContent : '';
-    if (b) { b.disabled = true; b.textContent = 'Generando…'; }
+  async function exportarPDF(formato, cerrar) {
+    var permiso = Modelo.puedeExportar(doc);
+    if (!permiso.ok) { return decir(permiso.motivo, true); }
     try {
       doc.x_pgd.fecha_version = doc.x_pgd.fecha_version || Modelo.hoy();
+      if (cerrar) { Modelo.sellar(doc); } else { doc.x_pgd.estado = 'abierta'; }
       var bytes = await PDF.exportar(doc, { formato: formato });
-      descargar(bytes, nombreFichero('pdf', formato), 'application/pdf');
-      decir('PDF generado en ' + PDF.DISPOSICIONES[formato].nombre.toLowerCase() +
-            '. Lleva el plan dentro: para seguir otro día, arrástrelo sobre esta ventana.');
+      descargar(bytes, nombreFichero('pdf'), 'application/pdf');
+      cambiado(true);
+      decir(cerrar
+        ? 'Versión ' + doc.x_pgd.version + ' cerrada y exportada. Para seguir trabajando hay que subir el número.'
+        : 'Borrador exportado. Lleva el plan dentro: para seguir otro día, arrástrelo sobre esta ventana.');
     } catch (e) {
       console.error(e);
       decir('No se ha podido generar el PDF: ' + (e.message || e), true);
-    } finally {
-      if (b) { b.disabled = false; b.textContent = rotulo; }
     }
   }
 
@@ -1108,10 +1162,25 @@
       try {
         doc = esPDF ? PDF.importar(lector.result)
                     : Modelo.desdeJSON(new TextDecoder('utf-8').decode(new Uint8Array(lector.result)));
+
+        var sello = Modelo.selloCorrecto(doc);
+        var cerrada = doc.x_pgd.estado === 'cerrada';
+        if (cerrada) { doc.x_pgd.minima = doc.x_pgd.version; }
+
         irA('portada', null);
         guardarBorrador();
-        decir('Plan recuperado: ' + (doc.dmp.title || 'sin título') +
-              ' · versión ' + doc.x_pgd.version + ' · ' + doc.dmp.dataset.length + ' conjuntos');
+
+        if (sello === false) {
+          decir('Atención: el contenido de este plan no coincide con su sello. Se ha modificado fuera del editor después de cerrarlo.', true);
+        } else if (cerrada) {
+          decir('Plan recuperado: ' + (doc.dmp.title || 'sin título') + ' · ' +
+                doc.dmp.dataset.length + ' conjuntos. La versión ' + doc.x_pgd.version +
+                ' está cerrada: para exportar de nuevo hay que subir el número.');
+        } else {
+          decir('Plan recuperado: ' + (doc.dmp.title || 'sin título') +
+                ' · borrador de la versión ' + doc.x_pgd.version + ' · ' +
+                doc.dmp.dataset.length + ' conjuntos');
+        }
       } catch (e) {
         decir(e.message || 'No se ha podido leer ese fichero.', true);
       }

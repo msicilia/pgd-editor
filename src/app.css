@@ -155,10 +155,17 @@ button.barra-b .insignia.limpio{background:var(--accent-soft); color:var(--ok)}
   background:var(--sel); color:var(--accent-ink); font-weight:600;
 }
 .indice .item.futuro{color:var(--ink-3)}
-.indice .punto{font-size:9px; line-height:1; width:9px; flex:none; color:var(--ink-3)}
-.indice .punto.lleno{color:var(--ok)}
-.indice .punto.parcial{color:var(--aviso)}
-.indice .punto.vacio, .indice .punto.pendiente{color:var(--line-3)}
+.indice .punto{
+  flex:none; width:7px; height:7px; border-radius:50%;
+  border:1px solid var(--line-3); background:transparent;
+}
+.indice .punto.lleno{background:var(--ok); border-color:var(--ok)}
+.indice .punto.parcial{
+  border-color:var(--aviso);
+  background:linear-gradient(90deg,var(--aviso) 0 50%,transparent 50% 100%);
+}
+.indice .punto.vacio{border-color:var(--line-3); background:transparent}
+.indice .punto.pendiente{border:0; width:3px; height:3px; margin:0 2px; background:var(--line-3)}
 .indice .rot{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .indice .num{font-family:var(--mono); font-size:10px; color:var(--ink-3); margin-right:5px}
 .indice .item[aria-current="true"] .num{color:var(--accent-ink)}
@@ -382,3 +389,28 @@ button.borrar:hover:not(:disabled){border-color:var(--alerta); color:var(--alert
     background:rgba(12,20,18,.26)}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none !important; animation:none !important}}
+
+
+/* ---------- confirmación en línea ----------
+   El diálogo del navegador no se muestra dentro de la aplicación de
+   escritorio, así que la confirmación se dibuja donde se pidió. */
+.confirmar{
+  margin-top:11px; padding:10px 12px; border-radius:6px;
+  background:var(--alerta-soft); border:1px solid var(--alerta);
+}
+.confirmar p{margin:0 0 9px; font-size:12.5px; line-height:1.5; color:var(--ink)}
+button.peligro{background:var(--alerta); border-color:var(--alerta); color:#fff; font-weight:500}
+button.peligro:hover:not(:disabled){filter:brightness(.92); color:#fff}
+
+/* ---------- estado de la versión ---------- */
+.ver.cerrada{background:var(--accent-soft); color:var(--accent-ink); font-weight:600}
+.version-actual.cerrada{background:var(--accent-soft); color:var(--accent-ink)}
+.menu-flotante .menu-aviso{
+  margin:4px 2px 2px; padding:7px 9px; border-radius:5px; font-size:11.5px;
+  line-height:1.5; background:var(--aviso-soft); color:var(--aviso);
+}
+.cab-acciones{margin-top:9px; display:flex; gap:8px; flex-wrap:wrap}
+
+/* Nada de lo que se escribe debe desbordar su caja. */
+.pista, .menor, .ayuda, .destacado p, .pendiente-caja p, .avisos li,
+.todo-bien, .confirmar p, .indice .grupo{overflow-wrap:anywhere}
