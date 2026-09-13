@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "La aplicación no necesita ningún permiso del sistema: todo ocurre dentro de la ventana, y los ficheros entran y salen por el diálogo del navegador.",
+  "description": "Solo el diálogo de guardar del sistema. La escritura la hace un comando propio sobre la ruta que el usuario acaba de señalar, de modo que no hace falta abrir permisos generales al sistema de ficheros.",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": ["core:default", "dialog:default"]
 }

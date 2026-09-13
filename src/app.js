@@ -148,8 +148,11 @@
     oj.appendChild(el('small', null, 'Para herramientas que hablen el estándar'));
     oj.addEventListener('click', function () {
       cerrarMenus();
-      descargar(new TextEncoder().encode(Modelo.aJSON(doc)), nombreFichero('json'), 'application/json');
-      decir('JSON guardado, conforme al modelo RDA.');
+      guardar(new TextEncoder().encode(Modelo.aJSON(doc)), nombreFichero('json'),
+        'json', 'Fichero JSON', 'application/json').then(function (ruta) {
+          if (ruta === null && window.__TAURI__) { return; }
+          decir('JSON guardado' + (ruta ? ' en ' + soloNombre(ruta) : '') + ', conforme al modelo RDA.');
+        });
     });
     m.appendChild(oj);
 
@@ -920,8 +923,11 @@
     var bj = el('button', null, 'Guardar como JSON (RDA)');
     bj.type = 'button';
     bj.addEventListener('click', function () {
-      descargar(new TextEncoder().encode(Modelo.aJSON(doc)), nombreFichero('json'), 'application/json');
-      decir('JSON guardado, conforme al modelo RDA.');
+      guardar(new TextEncoder().encode(Modelo.aJSON(doc)), nombreFichero('json'),
+        'json', 'Fichero JSON', 'application/json').then(function (ruta) {
+          if (ruta === null && window.__TAURI__) { return; }
+          decir('JSON guardado' + (ruta ? ' en ' + soloNombre(ruta) : '') + ', conforme al modelo RDA.');
+        });
     });
     fila.appendChild(bj);
 
@@ -1120,12 +1126,34 @@
     avisoTimer = setTimeout(function () { d.remove(); }, error ? 7000 : 3800);
   }
 
-  function descargar(bytes, nombre, tipo) {
+  /* Guardar un fichero.
+
+     Dentro de la aplicación de escritorio se usa el diálogo del
+     sistema, que es lo que permite elegir carpeta y nombre. La página
+     abierta en un navegador no puede hacerlo, y ahí se cae a la
+     descarga de siempre. Devuelve la ruta elegida, o nada si se
+     cancela; en el navegador, nada. */
+  async function guardar(bytes, nombre, extension, descripcion, tipo) {
+    var T = window.__TAURI__;
+    if (T && T.core && T.core.invoke) {
+      return await T.core.invoke('guardar_como', {
+        nombre: nombre,
+        extension: extension,
+        descripcion: descripcion,
+        datos: Array.from(new Uint8Array(bytes))
+      });
+    }
     var url = URL.createObjectURL(new Blob([bytes], { type: tipo }));
     var a = el('a');
     a.href = url; a.download = nombre;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+    return null;
+  }
+
+  /* Solo el nombre del fichero, para el mensaje de confirmación. */
+  function soloNombre(ruta) {
+    return String(ruta || '').split(/[\\/]/).pop();
   }
 
   function nombreFichero(ext, formato) {
@@ -1142,13 +1170,25 @@
     if (!permiso.ok) { return decir(permiso.motivo, true); }
     try {
       doc.x_pgd.fecha_version = doc.x_pgd.fecha_version || Modelo.hoy();
-      if (cerrar) { Modelo.sellar(doc); } else { doc.x_pgd.estado = 'abierta'; }
-      var bytes = await PDF.exportar(doc, { formato: formato });
-      descargar(bytes, nombreFichero('pdf'), 'application/pdf');
+      /* El sello se calcula sobre el documento tal como se va a
+         imprimir, pero solo se fija si el guardado llega a ocurrir:
+         cancelar el diálogo no debe cerrar la versión. */
+      var copia = Modelo.desdeJSON(Modelo.aJSON(doc));
+      if (cerrar) { Modelo.sellar(copia); } else { copia.x_pgd.estado = 'abierta'; }
+      var bytes = await PDF.exportar(copia, { formato: formato });
+      var ruta = await guardar(bytes, nombreFichero('pdf'), 'pdf',
+        'Documento PDF', 'application/pdf');
+      if (ruta === null && window.__TAURI__) {
+        /* se canceló el diálogo: el documento no se toca */
+        return;
+      }
+      if (cerrar) { Modelo.sellar(doc); }
       cambiado(true);
       decir(cerrar
-        ? 'Versión ' + doc.x_pgd.version + ' cerrada y exportada. Para seguir trabajando hay que subir el número.'
-        : 'Borrador exportado. Lleva el plan dentro: para seguir otro día, arrástrelo sobre esta ventana.');
+        ? 'Versión ' + doc.x_pgd.version + ' cerrada' + (ruta ? ' en ' + soloNombre(ruta) : '') +
+          '. Para seguir trabajando hay que subir el número.'
+        : 'Borrador guardado' + (ruta ? ' en ' + soloNombre(ruta) : '') +
+          '. Lleva el plan dentro: para seguir otro día, arrástrelo sobre esta ventana.');
     } catch (e) {
       console.error(e);
       decir('No se ha podido generar el PDF: ' + (e.message || e), true);
@@ -1199,6 +1239,18 @@
     pintarPanel();
 
     $('#b-revision').addEventListener('click', function () { irA('revision', null); });
+    $('#b-ejemplo').addEventListener('click', function () {
+      function cargar() {
+        doc = Modelo.desdeJSON(JSON.stringify(window.EJEMPLO));
+        irA('conjuntos', null);
+        guardarBorrador();
+        decir('Caso de ejemplo cargado: PREVIA, con sus siete conjuntos de datos.');
+      }
+      if (!doc.dmp.title && !doc.dmp.dataset.length) { return cargar(); }
+      confirmar($('#panel'), 'Se descartará el plan que hay ahora y se cargará el caso de ejemplo del curso.',
+        'Cargar el ejemplo', cargar);
+    });
+
     $('#b-abrir').addEventListener('click', function () { $('#fichero').click(); });
     $('#b-exportar').addEventListener('click', function (e) { e.stopPropagation(); menuExportar(); });
     document.addEventListener('click', function (e) {
