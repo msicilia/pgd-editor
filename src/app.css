@@ -38,7 +38,8 @@
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
-  margin:0; background:var(--paper); color:var(--ink);
+  margin:0; display:flex; flex-direction:column; height:100%;
+  background:var(--paper); color:var(--ink);
   font-family:"Public Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   font-size:15px; line-height:1.55;
   -webkit-font-smoothing:antialiased;
@@ -47,20 +48,22 @@ body{
 
 /* ---------- barra superior ---------- */
 .barra{
-  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  display:flex; align-items:center; gap:14px; flex:none; min-width:0;
   padding:11px 20px; background:var(--surface); border-bottom:1px solid var(--line);
-  position:sticky; top:0; z-index:30;
+  z-index:30;
 }
 .barra h1{
   font-family:Newsreader,Georgia,serif; font-weight:600; font-size:17px;
-  margin:0; letter-spacing:-.01em; white-space:nowrap;
+  margin:0; letter-spacing:-.01em;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
 }
 .ver{
+  flex:none;
   font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12px;
   padding:3px 9px; border-radius:5px; background:var(--accent-soft); color:var(--accent-ink);
   white-space:nowrap;
 }
-.estado{font-size:12.5px; color:var(--ink-3); margin-left:auto; white-space:nowrap}
+.estado{font-size:12.5px; color:var(--ink-3); margin-left:auto; white-space:nowrap; flex:none}
 .estado.guardado{color:var(--ok)}
 
 /* ---------- botones ---------- */
@@ -75,12 +78,14 @@ button.discreto{border-color:transparent; background:none; color:var(--ink-3); p
 button.discreto:hover{background:var(--surface-2); color:var(--alerta); border-color:transparent}
 
 /* ---------- rejilla: índice fijo, una sección a la vez ---------- */
-.rejilla{display:grid; grid-template-columns:300px minmax(0,1fr);
-  height:calc(100vh - 53px)}
+.rejilla{display:grid; grid-template-columns:clamp(224px,21vw,310px) minmax(0,1fr);
+  flex:1; min-height:0}
+/* solo existe cuando el índice se superpone, por debajo del punto de corte */
+.velo{display:none}
 
 .indice{
   border-right:1px solid var(--line); background:var(--surface);
-  overflow-y:auto; padding:12px 0 50px;
+  overflow-y:auto; min-height:0; padding:12px 0 50px;
 }
 .indice .grupo{
   padding:16px 18px 5px; font-size:10.5px; font-weight:700;
@@ -103,7 +108,7 @@ button.discreto:hover{background:var(--surface-2); color:var(--alerta); border-c
 .indice .punto.parcial{color:var(--aviso)}
 .indice .punto.vacio{color:var(--line-2)}
 .indice .punto.pendiente{color:var(--line-2)}
-.indice .rot{flex:1; min-width:0; line-height:1.35}
+.indice .rot{flex:1; min-width:0; line-height:1.35; overflow-wrap:anywhere}
 .indice .num{
   font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px;
   color:var(--ink-3); margin-right:7px;
@@ -124,8 +129,9 @@ button.discreto:hover{background:var(--surface-2); color:var(--alerta); border-c
 .indice .hijo.anadir:hover{color:var(--accent-ink)}
 
 /* ---------- panel ---------- */
-.panel{overflow-y:auto; padding:30px 42px 110px; outline:none}
-.panel > *{max-width:720px}
+.panel{overflow-y:auto; min-height:0; outline:none;
+  padding:clamp(18px,2.6vw,32px) clamp(16px,3.4vw,44px) 110px}
+.panel > *{max-width:760px; margin-left:auto; margin-right:auto}
 .cab{margin-bottom:6px}
 .cab .volver{
   border:0; background:none; padding:0 0 10px; color:var(--ink-3); font-size:13px;
@@ -152,7 +158,7 @@ button.discreto:hover{background:var(--surface-2); color:var(--alerta); border-c
 .campo > label{font-size:12.5px; font-weight:600; color:var(--ink-2)}
 .campo > .ayuda{font-size:12px; color:var(--ink-3); line-height:1.45}
 .campos{display:grid; gap:14px}
-.campos.dos{grid-template-columns:repeat(2,minmax(0,1fr))}
+.campos.dos{grid-template-columns:repeat(auto-fit,minmax(min(236px,100%),1fr))}
 .campos .campo{margin-bottom:0}
 input[type=text], input[type=email], input[type=date], textarea, select{
   font:inherit; font-size:14.5px; color:var(--ink); background:var(--surface);
@@ -176,7 +182,7 @@ select{appearance:none;
 .conjunto{background:var(--surface); border:1px solid var(--line); border-radius:10px;
   padding:15px 17px 17px; box-shadow:var(--sombra)}
 .conjunto.incompleto{border-left:3px solid var(--aviso)}
-.conjunto-cab{display:flex; align-items:center; gap:10px; margin-bottom:11px}
+.conjunto-cab{display:flex; align-items:center; gap:10px; margin-bottom:11px; flex-wrap:wrap}
 .conjunto-cab .sep{margin-left:auto}
 .cod{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12.5px; font-weight:500;
   padding:3px 8px; border-radius:5px; background:var(--accent-soft); color:var(--accent-ink)}
@@ -193,7 +199,7 @@ button.enlace:hover{background:var(--surface-2); border-color:transparent}
 .nivel{border:1px solid var(--line); border-radius:10px; background:var(--surface);
   margin-bottom:11px; overflow:hidden}
 .nivel.abierto{box-shadow:var(--sombra)}
-.nivel-cab{display:flex; align-items:center; gap:11px; width:100%; text-align:left;
+.nivel-cab{display:flex; align-items:center; gap:11px; width:100%; min-width:0; text-align:left;
   font:inherit; font-size:14.5px; background:none; border:0; border-radius:0;
   padding:12px 16px; color:var(--ink); cursor:pointer}
 .nivel-cab:hover{background:var(--surface-2); border-color:transparent}
@@ -202,14 +208,14 @@ button.enlace:hover{background:var(--surface-2); border-color:transparent}
 .nivel-n{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11.5px;
   background:var(--accent-soft); color:var(--accent-ink); border-radius:5px;
   padding:2px 7px; flex:none}
-.nivel-t{flex:1; font-weight:600}
+.nivel-t{flex:1; min-width:0; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .nivel-estado{font-size:11.5px; color:var(--ink-3);
   font-family:"IBM Plex Mono",ui-monospace,monospace; flex:none}
 .nivel-estado.completo{color:var(--ok)}
 .nivel-cuerpo{padding:16px 17px 6px}
 .nivel-cuerpo .pista{margin-top:0; margin-bottom:15px}
 
-.entre-conjuntos{display:flex; margin-top:26px; padding-top:18px;
+.entre-conjuntos{display:flex; gap:10px; flex-wrap:wrap; margin-top:26px; padding-top:18px;
   border-top:1px solid var(--line)}
 
 /* ---------- cuadros ---------- */
@@ -262,14 +268,15 @@ button.enlace:hover{background:var(--surface-2); border-color:transparent}
 .barra .menu{display:none; border:0; background:none; font-size:19px; padding:2px 8px;
   color:var(--ink-2); line-height:1}
 
-@media (max-width:940px){
+@media (max-width:1040px){
   .barra .menu{display:block}
-  .rejilla{grid-template-columns:1fr; height:auto}
-  .indice{position:fixed; top:53px; bottom:0; left:0; width:288px; z-index:40;
+  .rejilla{grid-template-columns:1fr; position:relative}
+  .indice{position:absolute; top:0; bottom:0; left:0; width:min(300px,86vw); z-index:40;
     transform:translateX(-100%); transition:transform .16s ease; box-shadow:var(--sombra)}
   body.indice-visible .indice{transform:none}
-  .panel{padding:22px 18px 70px; overflow:visible}
-  .campos.dos{grid-template-columns:1fr}
+  .velo{display:none}
+  body.indice-visible .velo{display:block; position:absolute; inset:0; z-index:39;
+    background:rgba(10,20,18,.28)}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none !important; animation:none !important}}
 

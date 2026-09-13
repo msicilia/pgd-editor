@@ -962,6 +962,12 @@
     $('#menu').addEventListener('click', function () {
       document.body.classList.toggle('indice-visible');
     });
+    $('#velo').addEventListener('click', function () {
+      document.body.classList.remove('indice-visible');
+    });
+    window.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { document.body.classList.remove('indice-visible'); }
+    });
 
     $('#fichero').addEventListener('change', function (e) {
       if (e.target.files && e.target.files[0]) { cargarFichero(e.target.files[0]); }
