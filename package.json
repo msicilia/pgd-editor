@@ -1,0 +1,14 @@
+{
+  "name": "pgd-editor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Editor de planes de gestión de datos sobre el modelo RDA",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "web": "python3 -m http.server 8080 --directory src"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

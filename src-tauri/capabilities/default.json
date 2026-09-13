@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "La aplicación no necesita ningún permiso del sistema: todo ocurre dentro de la ventana, y los ficheros entran y salen por el diálogo del navegador.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

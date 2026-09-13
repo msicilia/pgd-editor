@@ -1,0 +1,40 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Editor de planes de gestión de datos",
+  "version": "0.1.0",
+  "identifier": "org.irycis.pgd-editor",
+  "build": {
+    "frontendDist": "../src"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Plan de gestión de datos",
+        "width": 1220,
+        "height": 860,
+        "minWidth": 720,
+        "minHeight": 560,
+        "resizable": true,
+        "dragDropEnabled": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "copyright": "IRYCIS · Universidad de Alcalá",
+    "category": "Productivity",
+    "shortDescription": "Editor de planes de gestión de datos",
+    "longDescription": "Redacta un plan de gestión de datos sobre el modelo RDA DMP Common Standard y lo exporta a PDF, con el propio plan incorporado para poder retomarlo."
+  }
+}

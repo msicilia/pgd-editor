@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Editor de planes de gestión de datos</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<div class="barra">
+  <button class="menu" id="menu" aria-label="Mostrar u ocultar el índice" title="Índice">≡</button>
+  <h1 id="titulo-barra">Plan de gestión de datos</h1>
+  <span class="ver" id="etiqueta-version">v1.0</span>
+  <span class="estado" id="estado"></span>
+</div>
+
+<div class="rejilla">
+  <nav class="indice" id="indice" aria-label="Apartados del plan"></nav>
+  <main class="panel" id="panel" tabindex="-1"></main>
+</div>
+
+<div class="soltar" id="soltar"><div>Suelte aquí el PDF o el JSON del plan</div></div>
+<input type="file" id="fichero" accept=".pdf,.json,application/pdf,application/json" hidden>
+
+<script src="vendor/pdf-lib.min.js"></script>
+<script src="modelo.js"></script>
+<script src="pdf.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

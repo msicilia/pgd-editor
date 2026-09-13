@@ -1,0 +1,126 @@
+name: Compilar
+
+# Dos disparadores:
+#   · cada empujón y cada propuesta de cambio compilan en las tres
+#     plataformas, para enterarse de que algo se ha roto el mismo día;
+#   · una etiqueta «v…» compila y además deja preparado un borrador de
+#     publicación con los instaladores adjuntos.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compilar:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Los Mac con Apple Silicon y los Intel necesitan binarios
+          # distintos. Se compilan los dos y se reparten por separado.
+          - plataforma: macos-latest
+            args: '--target aarch64-apple-darwin'
+            nombre: macOS · Apple Silicon
+          - plataforma: macos-latest
+            args: '--target x86_64-apple-darwin'
+            nombre: macOS · Intel
+          - plataforma: ubuntu-22.04
+            args: ''
+            nombre: Linux
+          - plataforma: windows-latest
+            args: ''
+            nombre: Windows
+
+    name: ${{ matrix.nombre }}
+    runs-on: ${{ matrix.plataforma }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Solo en Linux: Tauri usa el motor del sistema, y en Ubuntu eso
+      # significa WebKitGTK. En macOS y Windows viene con el sistema.
+      - name: Dependencias del sistema (Linux)
+        if: matrix.plataforma == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            build-essential \
+            curl wget file \
+            libxdo-dev \
+            libssl-dev
+
+      - name: Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      # Los dos binarios de macOS se compilan de forma cruzada desde el
+      # mismo ejecutor, así que hay que añadir el objetivo a mano.
+      - name: Objetivo de compilación (macOS)
+        if: matrix.plataforma == 'macos-latest'
+        run: rustup target add ${{ contains(matrix.args, 'aarch64') && 'aarch64-apple-darwin' || 'x86_64-apple-darwin' }}
+
+      - name: Caché de cargo
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+          key: ${{ matrix.plataforma }}-${{ matrix.args }}
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # La interfaz es HTML y JavaScript sin compilar, así que aquí no
+      # hay paso de construcción: solo hace falta la herramienta de
+      # línea de órdenes de Tauri.
+      - name: Instalar la CLI de Tauri
+        run: npm install
+
+      - name: Comprobar la sintaxis de la interfaz
+        run: |
+          node --check src/modelo.js
+          node --check src/pdf.js
+          node --check src/app.js
+
+      - name: Compilar y empaquetar
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: ${{ matrix.args }}
+          # Solo se crea publicación cuando se empuja una etiqueta.
+          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+          releaseName: ${{ startsWith(github.ref, 'refs/tags/') && 'Editor de PGD __VERSION__' || '' }}
+          releaseBody: |
+            Editor de planes de gestión de datos.
+
+            Descargue el fichero que corresponda a su sistema. En macOS,
+            la primera vez hay que abrirlo con el botón derecho y elegir
+            «Abrir», porque la aplicación todavía no está firmada.
+          releaseDraft: true
+          prerelease: false
+
+      # En los empujones sin etiqueta no hay publicación, pero conviene
+      # poder descargarse lo compilado para probarlo.
+      - name: Guardar lo compilado
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.nombre }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            src-tauri/target/release/bundle/
+            src-tauri/target/*/release/bundle/
