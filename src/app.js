@@ -80,14 +80,75 @@
   function cambiado(repintarPanel) {
     clearTimeout(temporizador);
     temporizador = setTimeout(guardarBorrador, 500);
-    $('#etiqueta-version').textContent = 'v' + (doc.x_pgd.version || '1.0');
-    $('#titulo-barra').textContent = doc.dmp.title || 'Plan de gestión de datos';
+    pintarBarra();
     pintarIndice();
     if (repintarPanel) { pintarPanel(); }
   }
 
+  /* La revisión y la exportación estaban al final del índice, y eran lo
+     que más falta hace tener siempre a mano. Suben a la barra. */
+  function pintarBarra() {
+    $('#etiqueta-version').textContent = 'v' + (doc.x_pgd.version || '1.0');
+    $('#titulo-barra').textContent = doc.dmp.title || 'Plan de gestión de datos';
+    var n = Modelo.comprobar(doc).length;
+    var ins = $('#insignia');
+    ins.textContent = n ? String(n) : '✓';
+    ins.className = 'insignia' + (n ? '' : ' limpio');
+    $('#b-revision').title = n
+      ? n + (n === 1 ? ' cosa por decidir' : ' cosas por decidir')
+      : 'Lo que se puede comprobar está resuelto';
+    $('#b-revision').setAttribute('aria-current',
+      vista.seccion === 'revision' && !vista.conjunto ? 'true' : 'false');
+  }
+
+  function cerrarMenus() {
+    var m = $('.menu-flotante');
+    if (m) { m.remove(); }
+    $('#b-exportar').setAttribute('aria-expanded', 'false');
+  }
+
+  function menuExportar() {
+    if ($('.menu-flotante')) { return cerrarMenus(); }
+    var b = $('#b-exportar');
+    var m = el('div', 'menu-flotante');
+    m.setAttribute('role', 'menu');
+
+    Object.keys(PDF.DISPOSICIONES).forEach(function (k) {
+      var op = el('button');
+      op.type = 'button';
+      op.setAttribute('role', 'menuitem');
+      op.appendChild(document.createTextNode('PDF · ' + PDF.DISPOSICIONES[k].nombre));
+      op.appendChild(el('small', null, k === 'curso'
+        ? 'Por decisiones, en el orden de la plantilla del curso'
+        : 'Volcado a los apartados de la plantilla europea'));
+      op.addEventListener('click', function () { cerrarMenus(); exportarPDF(k, null); });
+      m.appendChild(op);
+    });
+    m.appendChild(el('hr'));
+    var oj = el('button');
+    oj.type = 'button';
+    oj.setAttribute('role', 'menuitem');
+    oj.appendChild(document.createTextNode('JSON · modelo RDA'));
+    oj.appendChild(el('small', null, 'Para herramientas que hablen el estándar'));
+    oj.addEventListener('click', function () {
+      cerrarMenus();
+      descargar(new TextEncoder().encode(Modelo.aJSON(doc)), nombreFichero('json'), 'application/json');
+      decir('JSON guardado, conforme al modelo RDA.');
+    });
+    m.appendChild(oj);
+
+    document.body.appendChild(m);
+    var r = b.getBoundingClientRect();
+    m.style.top = (r.bottom + 5) + 'px';
+    m.style.left = Math.max(8, Math.min(r.right - m.offsetWidth, window.innerWidth - m.offsetWidth - 8)) + 'px';
+    b.setAttribute('aria-expanded', 'true');
+    m.querySelector('button').focus();
+  }
+
   function irA(seccion, conjunto) {
     vista = { seccion: seccion, conjunto: conjunto || null };
+    cerrarMenus();
+    pintarBarra();
     pintarIndice();
     pintarPanel();
     $('#panel').scrollTop = 0;
@@ -358,7 +419,7 @@
 
   /* Un campo declarado en TEMAS, sobre el objeto que sea. */
   function campoTema(f, obj, alCambiar) {
-    var o = { ayuda: f.ayuda, ejemplo: f.ejemplo, clave: f.k };
+    var o = { ayuda: f.ayuda, ejemplo: f.ejemplo, clave: f.k, req: f.req };
     if (f.tipo === 'select') {
       return selectLibre(f.et, obj[f.k], Modelo[f.opciones], o, function (v) {
         obj[f.k] = v; alCambiar();
@@ -430,10 +491,10 @@
     p.appendChild(pista('Lo que permite saber, dentro de diez años, de qué proyecto es este documento y a quién preguntar.'));
 
     p.appendChild(grupoCampos('El proyecto', [
-      campoTexto('Título del proyecto', 'dmp.title', 'Tal como figura en la resolución, si ya está concedido', true),
+      campoTexto('Título del proyecto', 'dmp.title', 'Tal como figura en la resolución, si ya está concedido', true, null, 'obligatorio'),
       dos(
         campoTexto('Código o expediente', 'dmp.dmp_id.identifier', 'Se deja vacío si aún no existe'),
-        campoTexto('Institución responsable', 'x_pgd.institucion', 'Quien responde de los datos')
+        campoTexto('Institución responsable', 'x_pgd.institucion', 'Quien responde de los datos', false, null, 'obligatorio')
       ),
       dos(
         campoTexto('Financiador', 'dmp.project.0.funding.0.name', 'Vacío si no hay financiación externa'),
@@ -444,8 +505,8 @@
     p.appendChild(grupoCampos('Persona responsable', [
       pista('Un nombre, no un servicio ni «el equipo investigador». Es a quien se dirigirá quien tenga una pregunta sobre estos datos dentro de diez años.'),
       dos(
-        campoTexto('Nombre y apellidos', 'dmp.contact.name'),
-        campoTexto('Correo electrónico', 'dmp.contact.mbox')
+        campoTexto('Nombre y apellidos', 'dmp.contact.name', '', false, null, 'obligatorio'),
+        campoTexto('Correo electrónico', 'dmp.contact.mbox', '', false, null, 'recomendado')
       ),
       campoTexto('ORCID', 'dmp.contact.contact_id.identifier', '0000-0000-0000-0000',
         false, 'Opcional. Es lo que permite que el conjunto de datos cuente en el currículo de quien lo produjo.')
@@ -625,11 +686,11 @@
 
     if (n.id === 1) {
       cuerpo.appendChild(campoLibre('Título del conjunto', 'text', c.title,
-        { ejemplo: 'Cuaderno de recogida electrónico',
+        { req: 'obligatorio', ejemplo: 'Cuaderno de recogida electrónico',
           ayuda: 'Un nombre reconocible por el equipo. Se acompañará del identificador ' + c.dataset_id.identifier + ', que es como se citará el conjunto en el resto del documento.' },
         function (v) { c.title = v; cambiado(); }));
       cuerpo.appendChild(campoLibre('Descripción y contenido', 'textarea', c.description,
-        { ejemplo: 'Variables clínicas y desenlaces recogidos en cada visita: demográficas, antecedentes, función renal y tratamiento concomitante.',
+        { req: 'obligatorio', ejemplo: 'Variables clínicas y desenlaces recogidos en cada visita: demográficas, antecedentes, función renal y tratamiento concomitante.',
           ayuda: 'Que alguien ajeno al proyecto entienda qué hay dentro y pueda juzgar si le sirve. Se nombran las variables o los grupos de variables: «datos clínicos» no describe nada. El error frecuente es describir el proyecto en vez del conjunto.' },
         function (v) { c.description = v; cambiado(); }));
       var d1 = el('div', 'campos dos'); d1.style.marginTop = '13px';
@@ -646,11 +707,11 @@
 
     if (n.id === 2) {
       cuerpo.appendChild(selectLibre('Origen', c.x_origen, Modelo.ORIGEN,
-        { clave: 'x_origen',
+        { req: 'recomendado', clave: 'x_origen',
           ayuda: 'Determina casi todo lo demás. Un dato preexistente de origen asistencial no se puede usar sin una habilitación propia, y su obtención sigue el circuito de autorización y extracción que tenga establecido la institución, con sus plazos.' },
         function (v) { c.x_origen = v; cambiado(); }));
       cuerpo.appendChild(campoLibre('Sistema de recogida u origen', 'text', c.x_sistema,
-        { ejemplo: 'Plataforma institucional de captura de datos',
+        { req: 'recomendado', ejemplo: 'Plataforma institucional de captura de datos',
           ayuda: 'El nombre del sistema concreto donde se genera el dato o del que se extrae. Es lo que permite comprobar la extracción y volver a pedirla si hiciera falta.' },
         function (v) { c.x_sistema = v; cambiado(); }));
       var d2 = el('div', 'campos dos'); d2.style.marginTop = '13px';
@@ -667,7 +728,7 @@
 
     if (n.id === 3) {
       cuerpo.appendChild(selectLibre('Nivel de identificabilidad', c.x_identificabilidad, Modelo.IDENTIFICABILIDAD,
-        { clave: 'x_identificabilidad',
+        { req: 'obligatorio', clave: 'x_identificabilidad',
           ayuda: 'Retirar el nombre y el número de historia no anonimiza: seudonimiza. Mientras exista en algún lugar la correspondencia que permite volver a la persona, el conjunto sigue siendo dato personal y le aplica toda la normativa. La única frontera con consecuencias jurídicas está entre seudonimizado y anonimizado.' },
         function (v) { c.x_identificabilidad = v; cambiado(true); }));
 
@@ -686,7 +747,7 @@
           ayuda: 'Hay datos que identifican aunque se les retiren todas las etiquetas, porque la información en sí misma señala a una persona: secuencias genómicas, imagen craneal con reconstrucción facial posible, series de pocos casos, enfermedades poco frecuentes, fechas exactas y localización fina. No se corrige suprimiendo columnas. Si concurre, el destino del conjunto queda condicionado desde el principio; si no concurre, conviene hacerlo constar igualmente.' },
         function (v) { c.x_intrinseca = v; cambiado(); }));
       cuerpo.appendChild(campoLibre('Seudonimización y custodia de la clave', 'textarea', c.x_seudonimizacion,
-        { ejemplo: 'Código secuencial generado por el servicio de informática en el momento de la extracción. La tabla de correspondencia reside en un sistema separado bajo su custodia; el equipo investigador no tiene acceso a ella.',
+        { req: 'recomendado', ejemplo: 'Código secuencial generado por el servicio de informática en el momento de la extracción. La tabla de correspondencia reside en un sistema separado bajo su custodia; el equipo investigador no tiene acceso a ella.',
           clave: 'x_seudonimizacion',
           ayuda: 'Cuatro elementos: cómo se genera el código, quién custodia la correspondencia, dónde reside y en qué supuestos previstos puede levantarse. Que un conjunto esté seudonimizado no es una propiedad del fichero, sino del conjunto formado por el fichero y quien puede deshacer la correspondencia. Es la primera cuestión que plantea un comité de ética, y el campo que con más frecuencia aparece vacío.' },
         function (v) { c.x_seudonimizacion = v; cambiado(); }));
@@ -694,7 +755,7 @@
 
     if (n.id === 4) {
       cuerpo.appendChild(campoLibre('Persona responsable', 'text', c.x_responsable,
-        { ejemplo: 'Nombre y apellidos', clave: 'x_responsable',
+        { req: 'recomendado', ejemplo: 'Nombre y apellidos', clave: 'x_responsable',
           ayuda: 'Una persona concreta. No un servicio, no un departamento, no «el equipo investigador»: una tarea asignada a todos es una tarea de nadie, y eso se descubre cuando algo no se ha hecho y cada uno da por supuesto que correspondía a otro.' },
         function (v) { c.x_responsable = v; cambiado(); }));
       cuerpo.appendChild(campoLibre('Palabras clave', 'text', (c.keyword || []).join(', '),
@@ -723,6 +784,13 @@
 
   /* --- revisión y exportación ------------------------------------------ */
   function panelRevision(p) {
+    var leg = el('div', 'leyenda');
+    var l1 = el('span'); l1.appendChild(el('i','obl')); l1.appendChild(document.createTextNode('Sin ello el apartado no dice nada'));
+    var l2 = el('span'); l2.appendChild(el('i','rec')); l2.appendChild(document.createTextNode('Recomendado por el curso'));
+    leg.appendChild(l1); leg.appendChild(l2);
+    leg.appendChild(el('span', null, 'Las marcas aparecen junto al campo, en su apartado.'));
+    p.appendChild(leg);
+
     p.appendChild(destacado('El criterio de suficiencia',
       'Un párrafo del plan está bien si un tercero puede comprobar que se cumple. Si nadie ajeno al proyecto puede verificar lo que dice, el párrafo no compromete a nada y sobra. Es la única regla que hace falta, y se aplica frase a frase.'));
     p.appendChild(pista('Las comprobaciones de la lista del curso que se pueden automatizar con lo que esta maqueta cubre. No impiden exportar: un plan con huecos declarados es mejor que uno que los tapa con frases genéricas.'));
@@ -859,8 +927,19 @@
   var ayudasAbiertas = {};
   var todasLasAyudas = false;
 
-  function base(etiqueta, ayuda, clave) {
-    var d = el('div', 'campo');
+  /* Un campo vacío que el estándar exige se marca en rojizo; uno que el
+     curso recomienda, en gris. Un punto junto a la etiqueta y una línea
+     en el borde: suficiente para verlo de un vistazo, discreto para no
+     convertir un formulario a medias en una pantalla de errores. */
+  function marcaFalta(req, valor) {
+    if (!req) { return ''; }
+    var v = Array.isArray(valor) ? valor.length : String(valor == null ? '' : valor).trim();
+    if (v && v !== 'unknown') { return ''; }
+    return req === 'obligatorio' ? ' falta-obl' : ' falta-rec';
+  }
+
+  function base(etiqueta, ayuda, clave, marca) {
+    var d = el('div', 'campo' + (marca || ''));
     var id = 'c' + Math.random().toString(36).slice(2, 9);
     var fila = el('div', 'campo-cab');
     var l = el('label', null, etiqueta);
@@ -900,8 +979,8 @@
   }
 
   /* enlazados al documento por ruta */
-  function campoTexto(etiqueta, ruta, marcador, grande, ayuda) {
-    var d = base(etiqueta, ayuda);
+  function campoTexto(etiqueta, ruta, marcador, grande, ayuda, req) {
+    var d = base(etiqueta, ayuda, null, marcaFalta(req, leer(doc, ruta)));
     var i = el('input');
     i.type = 'text'; i.id = d._id;
     i.value = leer(doc, ruta) || '';
@@ -949,7 +1028,7 @@
   /* con retrollamada, para los campos de un conjunto */
   function campoLibre(etiqueta, tipo, valor, o, alCambiar) {
     o = typeof o === 'string' ? { ayuda: o } : (o || {});
-    var d = base(etiqueta, o.ayuda, o.clave);
+    var d = base(etiqueta, o.ayuda, o.clave, marcaFalta(o.req, valor));
     var e = el(tipo === 'textarea' ? 'textarea' : 'input');
     if (tipo === 'textarea') { e.rows = 3; } else { e.type = 'text'; }
     e.id = d._id;
@@ -961,7 +1040,7 @@
   }
   function selectLibre(etiqueta, valor, opciones, o, alCambiar) {
     o = typeof o === 'string' ? { ayuda: o } : (o || {});
-    var d = base(etiqueta, o.ayuda, o.clave);
+    var d = base(etiqueta, o.ayuda, o.clave, marcaFalta(o.req, valor));
     var s = el('select');
     s.id = d._id;
     opciones.forEach(function (op2) {
@@ -1046,10 +1125,16 @@
   function iniciar() {
     doc = recuperarBorrador() || Modelo.documentoNuevo();
     $('#titulo-barra').textContent = doc.dmp.title || 'Plan de gestión de datos';
-    $('#etiqueta-version').textContent = 'v' + (doc.x_pgd.version || '1.0');
-
+    pintarBarra();
     pintarIndice();
     pintarPanel();
+
+    $('#b-revision').addEventListener('click', function () { irA('revision', null); });
+    $('#b-abrir').addEventListener('click', function () { $('#fichero').click(); });
+    $('#b-exportar').addEventListener('click', function (e) { e.stopPropagation(); menuExportar(); });
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('.menu-flotante')) { cerrarMenus(); }
+    });
 
     $('#menu').addEventListener('click', function () {
       document.body.classList.toggle('indice-visible');
@@ -1058,7 +1143,10 @@
       document.body.classList.remove('indice-visible');
     });
     window.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') { document.body.classList.remove('indice-visible'); }
+      if (e.key === 'Escape') {
+        cerrarMenus();
+        document.body.classList.remove('indice-visible');
+      }
     });
 
     $('#fichero').addEventListener('change', function (e) {

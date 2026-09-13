@@ -177,65 +177,65 @@
   var TEMAS = {
     documentacion: {
       proyecto: [
-        { k: 'x_nombrado', et: 'Convención de nombres y versiones de fichero', tipo: 'textarea',
+        { k: 'x_nombrado', req: 'recomendado', et: 'Convención de nombres y versiones de fichero', tipo: 'textarea',
           ayuda: 'Cualquier convención explícita es mejor que «datos_final_v2_revisado_BUENO.csv». Una que funciona: proyecto_conjunto_versión_fecha, con la fecha en año-mes-día para que ordene sola.' },
-        { k: 'x_esquema', et: 'Esquema de metadatos del depósito', tipo: 'text',
+        { k: 'x_esquema', req: 'recomendado', et: 'Esquema de metadatos del depósito', tipo: 'text',
           ayuda: 'Lo impone en gran medida el repositorio. Basta con decir cuál se prevé.' }
       ],
       conjunto: [
-        { k: 'x_diccionario', et: 'Diccionario de variables', tipo: 'textarea',
+        { k: 'x_diccionario', req: 'recomendado', et: 'Diccionario de variables', tipo: 'textarea',
           ayuda: 'Dónde vive, quién lo mantiene y desde cuándo existe. No hay que pegarlo aquí.' },
-        { k: 'x_vocabularios', et: 'Estándares y vocabularios', tipo: 'textarea',
+        { k: 'x_vocabularios', req: 'recomendado', et: 'Estándares y vocabularios', tipo: 'textarea',
           ayuda: 'Con qué se codifica cada variable clave, y en qué versión. Lo normal es que se herede del sistema de origen: el trabajo no es escoger, es no perderlo y declarar cuál es.' }
       ],
       columnas: [{ k: 'x_diccionario', et: 'Diccionario' }]
     },
     almacenamiento: {
       proyecto: [
-        { k: 'x_no_usar', et: 'Qué no se usará', tipo: 'textarea',
+        { k: 'x_no_usar', req: 'recomendado', et: 'Qué no se usará', tipo: 'textarea',
           ayuda: 'Nube personal, correo electrónico, dispositivos sin cifrar, herramientas en línea no autorizadas, asistentes de inteligencia artificial de uso general. Conviene decir al lado qué se usa en su lugar: prohibir sin ofrecer salida garantiza que la regla se incumpla.' },
-        { k: 'x_transferencia', et: 'Cómo viajan los datos cuando salen de su sistema', tipo: 'textarea',
+        { k: 'x_transferencia', req: 'recomendado', et: 'Cómo viajan los datos cuando salen de su sistema', tipo: 'textarea',
           ayuda: 'Qué canal, quién lo autoriza y con qué protección.' }
       ],
       conjunto: [
-        { k: 'x_emplazamiento', et: 'Dónde reside', tipo: 'text',
+        { k: 'x_emplazamiento', req: 'obligatorio', et: 'Dónde reside', tipo: 'text',
           ayuda: 'El nombre del sistema concreto. «Servidores institucionales» no se puede comprobar.' },
-        { k: 'x_administra', et: 'Quién lo administra', tipo: 'text' },
-        { k: 'x_respaldo', et: 'Copias de seguridad', tipo: 'textarea',
+        { k: 'x_administra', req: 'recomendado', et: 'Quién lo administra', tipo: 'text' },
+        { k: 'x_respaldo', req: 'recomendado', et: 'Copias de seguridad', tipo: 'textarea',
           ayuda: 'Qué está cubierto y qué no, con qué frecuencia, cuánta retención, y si alguien ha probado a restaurar. Se pregunta, no se supone: es la afirmación que más veces resulta falsa al comprobarla.' }
       ],
       columnas: [{ k: 'x_emplazamiento', et: 'Sistema' }, { k: 'x_administra', et: 'Administra' }]
     },
     conservacion: {
       proyecto: [
-        { k: 'x_bloqueo', et: 'Bloqueo', tipo: 'textarea',
+        { k: 'x_bloqueo', req: 'recomendado', et: 'Bloqueo', tipo: 'textarea',
           ayuda: 'El estado intermedio entre «los estoy usando» y «ya no existen»: conservar impidiendo cualquier tratamiento salvo su puesta a disposición de jueces o administraciones. Cuánto dura, dónde residen y quién puede levantarlo, que no debería ser el equipo investigador.' },
-        { k: 'x_borrado', et: 'Borrado seguro', tipo: 'textarea',
+        { k: 'x_borrado', req: 'recomendado', et: 'Borrado seguro', tipo: 'textarea',
           ayuda: 'Quién lo ejecuta, con qué procedimiento y —lo que siempre se olvida— cómo queda acreditado. Sin un acta con fecha, «los datos se destruyeron en 2041» es indemostrable.' }
       ],
       conjunto: [
-        { k: 'x_plazo', et: 'Plazo de conservación', tipo: 'text',
+        { k: 'x_plazo', req: 'obligatorio', et: 'Plazo de conservación', tipo: 'text',
           ayuda: 'Tiene que permitir poner una fecha en un calendario. «El tiempo necesario» no lo permite.' },
-        { k: 'x_plazo_norma', et: 'Quién lo fija', tipo: 'text',
+        { k: 'x_plazo_norma', req: 'obligatorio', et: 'Quién lo fija', tipo: 'text',
           ayuda: 'La norma o el compromiso concreto. Sin esto el plazo no se puede comprobar ni discutir.' }
       ],
       columnas: [{ k: 'x_plazo', et: 'Plazo' }, { k: 'x_plazo_norma', et: 'Lo fija' }]
     },
     comparticion: {
       proyecto: [
-        { k: 'x_procedimiento', et: 'Procedimiento de acceso controlado', tipo: 'textarea',
+        { k: 'x_procedimiento', req: 'recomendado', et: 'Procedimiento de acceso controlado', tipo: 'textarea',
           ayuda: 'Quién autoriza las solicitudes, con qué criterios publicados y bajo qué acuerdo. Y qué pasa cuando el proyecto termine: un procedimiento que depende de una persona caduca con ella.' },
-        { k: 'x_disponibilidad', et: 'Declaración de disponibilidad prevista', tipo: 'textarea',
+        { k: 'x_disponibilidad', req: 'recomendado', et: 'Declaración de disponibilidad prevista', tipo: 'textarea',
           ayuda: 'El párrafo que pedirá la revista. Dejarlo redactado evita improvisarlo el día del envío, que es cuando aparece la fórmula de «disponible bajo petición al autor».' }
       ],
       conjunto: [
-        { k: 'x_destino', et: 'Destino', tipo: 'select', opciones: 'DESTINO',
+        { k: 'x_destino', req: 'obligatorio', et: 'Destino', tipo: 'select', opciones: 'DESTINO',
           ayuda: 'Se decide por conjunto. Decidir en bloque lleva a no publicar ni siquiera lo que no tenía ningún problema.' },
-        { k: 'x_justificacion', et: 'Justificación, si no es abierto', tipo: 'textarea',
+        { k: 'x_justificacion', req: 'obligatorio', et: 'Justificación, si no es abierto', tipo: 'textarea',
           ayuda: 'De dónde viene la restricción: el RGPD, el consentimiento o un tercero. «Por motivos de confidencialidad» no identifica ninguno de los tres.' },
-        { k: 'x_repositorio', et: 'Repositorio previsto', tipo: 'text',
+        { k: 'x_repositorio', req: 'recomendado', et: 'Repositorio previsto', tipo: 'text',
           ayuda: 'Cuál, y por qué ese. Hay que comprobar antes que admita el volumen, el acceso restringido y el coste.' },
-        { k: 'x_licencia', et: 'Licencia', tipo: 'text',
+        { k: 'x_licencia', req: 'recomendado', et: 'Licencia', tipo: 'text',
           ayuda: 'En acceso controlado la licencia no es lo que gobierna: gobierna el acuerdo de uso que firma quien solicita.' }
       ],
       columnas: [{ k: 'x_destino', et: 'Destino', opciones: 'DESTINO' }, { k: 'x_repositorio', et: 'Repositorio' }]
