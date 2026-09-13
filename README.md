@@ -1,10 +1,12 @@
 # Editor de planes de gestión de datos · maqueta
 
-Maqueta de trabajo del editor de PGD que acompañaría al curso C1. Cubre, a
-propósito, solo dos cosas: **la información de identificación** y **la lista de
-conjuntos de datos con su descripción**. La estructura de los conjuntos —qué
-tablas hay, qué representa una fila, cómo se enlazan— queda deliberadamente
-fuera de esta versión.
+Maqueta de trabajo del editor de PGD que acompaña al curso C1.
+
+Cubre los apartados 0, 1, 2, 5, 7, 8 y 9 de la plantilla del curso. Quedan
+pendientes los de muestras biológicas, otros resultados, marco legal y
+responsabilidades, que están en el índice y explican qué irá en ellos. La
+**estructura de los conjuntos** —qué tablas hay, qué representa una fila, cómo
+se enlazan— queda deliberadamente fuera por ahora.
 
 ## Probarla ahora mismo
 
@@ -20,15 +22,69 @@ distribución que el ZIP de revisión del curso.
 
 ## Cómo está pensada
 
-**Una sola pantalla.** Sin asistente por pasos y sin diálogos: el documento
-entero se ve y se toca desde el mismo sitio.
+**Índice a la izquierda, una sección a la vez a la derecha.** Siempre abierto,
+sin plegar: nada queda escondido tras un triángulo. Los apartados se agrupan por
+la pregunta que responden —*qué datos hay*, *dónde viven*, *con quién*— y cada
+uno lleva un punto de estado.
+
+**El orden es el de las decisiones, no el de las letras FAIR**, igual que la
+plantilla del curso y por el mismo motivo que argumenta D8·01: nadie se sienta a
+decidir «cómo hago mis datos interoperables», sino qué formato usa y con qué
+codifica los diagnósticos. La estructura de la Comisión Europea se obtendrá al
+exportar.
 
 **No hay botón de guardar.** Se guarda solo mientras se escribe. El botón que sí
 existe es *exportar*, porque exportar sí es una decisión que toma una persona.
 
-**Lo que falta se ve siempre**, en la columna de la derecha, mientras se
-escribe. Nunca como una pantalla de errores al final. Son las comprobaciones
-automatizables de la lista del curso, con las que esta maqueta puede aplicar.
+**Lo que falta sale donde se arregla**, al pie de cada apartado, y agrupado en
+la sección final de revisión. Nunca como una pantalla de errores al final.
+
+## Lo que se decide por conjunto, y por qué importa
+
+Cuatro apartados —documentación, almacenamiento, conservación y compartición— no
+son del proyecto: son **de cada conjunto**. Es la razón de que el modelo RDA sea
+*dataset*-céntrico, con sus `distribution`, `metadata` y `security_and_privacy`
+colgando de cada uno.
+
+Cada uno de esos apartados tiene la misma forma: los campos de proyecto arriba,
+después **una tabla que pone a todos los conjuntos juntos**, y debajo un bloque
+plegable por conjunto para rellenarlos.
+
+La tabla no es decoración. La tesis del curso es que las columnas no coinciden
+—en PREVIA, CD2 no se comparte y CD7 es abierto—, y eso solo se ve poniéndolas
+una al lado de otra. Un formulario por conjunto lo escondería.
+
+## La ficha de un conjunto, por niveles
+
+La ficha tiene catorce campos, y pedirlos de golpe la primera vez es la forma
+más segura de que no se rellene ninguno. Van en cuatro niveles, y cada uno dice
+*3 de 4* con el nivel cerrado:
+
+| | Nivel | Qué contiene |
+|---|---|---|
+| 1 | Lo esencial | Nombre, qué contiene, datos de personas, categoría especial |
+| 2 | De dónde sale y qué forma tiene | Origen, sistema, formato, volumen |
+| 3 | Identificabilidad | Nivel, identificabilidad intrínseca, custodia de la clave |
+| 4 | Para quién sirve | Palabras clave, calidad, utilidad fuera del proyecto, responsable |
+
+La ficha describe **qué es** el conjunto. **Qué se hace con él** se decide en los
+apartados 7, 8 y 9, por lo dicho arriba.
+
+## Coherencia con el curso
+
+No es un adorno: si la app y el curso dicen cosas distintas, el curso pierde.
+
+- Cada apartado remite a la unidad didáctica que lo explica.
+- Las palabras son las del curso: *conjunto de datos*, no *dataset*; la escala de
+  identificabilidad de D6·02; los tres destinos de D13·01, que son los tres
+  valores de `data_access` del estándar.
+- Las palabras que el criterio de suficiencia persigue —*adecuado*, *apropiado*,
+  *pertinente*, *vigente*, *necesario*, *periódico*— son las mismas que enumera
+  D15·03.
+- Al marcar un conjunto como **anónimo**, la app recuerda que si existe la clave
+  en algún sitio es seudonimizado. Al marcarlo **no personal**, que agregar no es
+  un peldaño de la escala y hay que decir qué se comprobó. Al marcarlo **no se
+  comparte**, pregunta si no hay una versión que sí.
 
 ## El PDF es el formato de archivo
 
@@ -115,14 +171,16 @@ doble clic.
 
 ## Lo que falta, por orden de utilidad
 
-1. **Los campos restantes de la ficha por conjunto**: origen, formato y volumen,
-   identificabilidad y custodia de la clave, responsable con nombre, destino.
-2. **Exportar al formato de la Comisión Europea**, respondiendo a sus apartados
-   por título. Un exportador por plantilla, sin tocar el modelo.
-3. **Las comprobaciones completas** de la lista del curso, incluidas las que
-   cruzan apartados —que lo prometido en compartición sea compatible con lo
-   declarado en el marco legal—.
-4. **Estructura y granularidad**, que es lo que esta versión deja fuera.
+1. **Exportar al formato de la Comisión Europea**, respondiendo a sus apartados
+   por título y no por número, porque la Comisión los renumera al revisar la
+   plantilla. Un exportador por plantilla, sin tocar el modelo.
+2. **Los cuatro apartados que quedan**: muestras biológicas, otros resultados,
+   marco legal y responsabilidades. El legal es mixto, como los cuatro de arriba.
+3. **Las comprobaciones que cruzan apartados**, que son las que más valen: que lo
+   prometido en compartición sea compatible con lo declarado en el marco legal.
+4. **El PDF con los apartados nuevos**: ahora solo imprime identificación,
+   resumen y conjuntos.
+5. **Estructura y granularidad**, que es lo que esta versión deja fuera.
 
 La regla que conviene no romper: cada plantilla nueva es **un exportador y un
 fichero de correspondencias**. Si un campo propio de una plantilla concreta
