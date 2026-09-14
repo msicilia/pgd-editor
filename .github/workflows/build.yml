@@ -93,6 +93,8 @@ jobs:
           node --check src/modelo.js
           node --check src/pdf.js
           node --check src/app.js
+          node --check src/ejemplo.js
+          node --check src/preguntas-ec.js
 
       - name: Compilar y empaquetar
         uses: tauri-apps/tauri-action@v0
@@ -104,11 +106,21 @@ jobs:
           tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
           releaseName: ${{ startsWith(github.ref, 'refs/tags/') && 'Editor de PGD __VERSION__' || '' }}
           releaseBody: |
-            Editor de planes de gestión de datos.
+            Editor de planes de gestión de datos. Descargue el fichero
+            que corresponda a su sistema.
 
-            Descargue el fichero que corresponda a su sistema. En macOS,
-            la primera vez hay que abrirlo con el botón derecho y elegir
-            «Abrir», porque la aplicación todavía no está firmada.
+            **Windows**: el `.msi`. Al abrirlo aparecerá un aviso de
+            SmartScreen, porque el instalador no está firmado; se
+            continúa con «Más información» → «Ejecutar de todas formas».
+
+            **macOS**: el `.dmg` de Apple Silicon o el de Intel según el
+            equipo. La primera vez hay que abrir la aplicación con el
+            botón derecho y elegir «Abrir», por el mismo motivo.
+
+            **Linux**: el `.AppImage` o el `.deb`.
+
+            Firmar los instaladores requiere certificados de Apple y de
+            Windows; mientras no los haya, esos avisos son inevitables.
           releaseDraft: true
           prerelease: false
 
