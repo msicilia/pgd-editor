@@ -4,9 +4,9 @@
   "private": true,
   "description": "Editor de planes de gestión de datos sobre el modelo RDA",
   "scripts": {
+    "tauri": "tauri",
     "dev": "tauri dev",
-    "build": "tauri build",
-    "web": "python3 -m http.server 8080 --directory src"
+    "build": "tauri build"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2"

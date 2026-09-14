@@ -1,25 +1,17 @@
 /* ------------------------------------------------------------------
-   Exportar el plan a PDF, e importarlo de vuelta.
+   Exportar el plan a PDF e importarlo de vuelta.
 
-   Lo que sostiene todo esto: el PDF que sale es un documento normal,
-   legible por cualquiera, y a la vez lleva el modelo dentro. Al
-   reimportarlo NO se lee el texto impreso —eso se rompería en cuanto
-   alguien cambiase una etiqueta—: se extrae el JSON exacto.
+   El PDF es un documento normal y a la vez lleva el modelo dentro. Al
+   reimportarlo no se lee el texto impreso: se extrae el JSON.
 
-   De ahí se sigue algo que conviene aprovechar: **el formato impreso
-   es una decisión de presentación, no del archivo**. El mismo
-   documento se puede imprimir de varias maneras y todas se reimportan
-   igual. De momento se imprime de una: por los apartados de la
-   plantilla de la Comisión Europea, citados por su título y no por su
-   número, porque la Comisión los renumera al revisar la plantilla.
-
-   Escribir una vez y volcar en el formulario que toque: eso es lo que
-   justifica que el editor no se organice como la plantilla europea.
+   Se imprime por los apartados de la plantilla de plan de gestión de
+   datos de Horizon Europe, citados por su título y no por su número,
+   porque la Comisión los renumera al revisar la plantilla.
 
    El modelo va por duplicado dentro del fichero:
 
      1. Como adjunto del PDF, que es la forma estándar. Quien lo abra en
-        Acrobat verá «plan-gestion-datos.json» en el panel de adjuntos.
+        un lector con panel de adjuntos verá «plan-gestion-datos.json».
      2. En base64 en el diccionario de información, entre dos marcas y
         SIN COMPRIMIR. Esa es la copia que se lee al reimportar, y no
         depende de cómo una versión concreta de la biblioteca serialice
@@ -69,8 +61,7 @@
   function tresT(v) { return v === 'yes' ? 'Sí' : v === 'no' ? 'No' : 'Sin determinar'; }
 
   /* ================================================================
-     El lienzo: las primitivas de dibujo. No saben nada del plan, de
-     modo que sirven igual para cualquier otra plantilla que se añada.
+     El lienzo: las primitivas de dibujo, que no saben nada del plan.
      ================================================================ */
   async function lienzo(pdf, L) {
     var reg = await pdf.embedFont(L.StandardFonts.Helvetica);
@@ -84,10 +75,8 @@
     var TENUE = L.rgb(0.62, 0.68, 0.67);
     var ACENTO = L.rgb(0.06, 0.42, 0.39);
     var FALTA = L.rgb(0.62, 0.35, 0.30);
-    /* Fondo oscuro y letra blanca en lo que es estructura: los títulos
-       de apartado, la cabecera de cada tabla y la de cada caja del
-       diagrama. Es lo que deja ver el esqueleto del documento pasando
-       las páginas sin leerlas. */
+    /* Fondo oscuro y letra blanca en lo que es estructura: títulos de
+       apartado, cabeceras de tabla y cabecera de cada caja. */
     var BANDA = L.rgb(0.12, 0.21, 0.20);
     var BLANCO = L.rgb(1, 1, 1);
 
@@ -214,11 +203,9 @@
         api.escribir(texto, { tam: 8.5, color: TENUE, cursiva: true });
         api.espacio(3);
       },
-      /* El diagrama de tablas. La disposición viene calculada del
-         modelo, la misma que dibuja la pantalla, de modo que las dos
-         no pueden discrepar. Aquí solo se traduce a coordenadas de
-         página: la y del modelo crece hacia abajo y la del PDF hacia
-         arriba. */
+      /* El diagrama de tablas, con la disposición que calcula el
+         modelo. Aquí solo se traduce a coordenadas de página: la y del
+         modelo crece hacia abajo y la del PDF hacia arriba. */
       diagrama: function (esq) {
         if (!esq.nodos.length) { return; }
         var escala = Math.min(1, ANCHO / esq.ancho);
@@ -305,19 +292,14 @@
      ================================================================ */
   /* Qué responde el plan a cada indicación del formulario europeo. La
      clave es el identificador que genera `preguntas-ec.js` leyendo el
-     DOCX oficial, de modo que si la Comisión revisa la plantilla se
-     vuelve a generar y se ve enseguida qué identificadores han
-     cambiado. Las cuarenta y dos tienen respuesta; una que no la
-     tuviera saldría marcada, porque omitirla en silencio haría que se
-     pasara por alto. */
+     DOCX oficial. Una indicación sin respuesta sale marcada. */
   function nombreTabla(doc, id) {
     var e = global.Modelo.tablasDelPlan(doc).filter(function (x) { return x.tabla.id === id; })[0];
     return e ? e.cod + ' · ' + (e.tabla.nombre || e.tabla.id) : id;
   }
 
   /* La estructura de los conjuntos tabulares: el diagrama y, debajo,
-     lo que el diagrama no cabe que diga. Solo aparece si alguien se ha
-     tomado la molestia de describirla, porque es opcional. */
+     la definición de cada tabla. Solo aparece si se ha descrito. */
   function estructuraEC(a, doc) {
     var esq = global.Modelo.esquema(doc);
     if (!esq.nodos.length) { return; }

@@ -227,10 +227,8 @@
      columna se une con otra. Es opcional y casi siempre sobra en los
      conjuntos que no son tabulares.
 
-     No hay editor de diagramas, y es deliberado: colocar cajas con el
-     ratón no añade una sola cosa que el plan necesite saber. Se teclea
-     el enlace y el diagrama se dibuja solo, aquí abajo, con la misma
-     disposición para la pantalla y para el PDF.                       */
+     El diagrama se calcula aquí abajo a partir de los enlaces, con la
+     misma disposición para la pantalla y para el PDF.                 */
 
   function siguienteIdTabla(doc) {
     var max = 0;
@@ -271,9 +269,9 @@
 
   var CAJA = { ancho: 156, alto: 56, huecoX: 84, huecoY: 16 };
 
-  /* Parte un texto en líneas cortas sin romper palabras. Lo hace el
-     modelo porque el número de líneas decide la altura de la caja, y
-     la altura tiene que ser la misma en la pantalla y en el PDF. */
+  /* Parte un texto en líneas cortas sin romper palabras. El número de
+     líneas decide la altura de la caja, que ha de ser la misma en la
+     pantalla y en el PDF. */
   function partirCorto(txt, max, maxLineas) {
     var lineas = [], ln = '';
     String(txt == null ? '' : txt).split(/\s+/).filter(Boolean).forEach(function (p) {

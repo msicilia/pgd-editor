@@ -1,17 +1,9 @@
 /* ------------------------------------------------------------------
-   La aplicación.
+   La aplicación: el índice, los formularios y el estado del documento.
 
-   Decisiones de uso que conviene no deshacer sin motivo:
-
-   · Índice a la izquierda, una sección a la vez a la derecha. Siempre
-     abierto, sin plegar: nada queda escondido tras un triángulo.
-   · El orden es el de las decisiones, no el de las letras FAIR. La
-     estructura de la Comisión se obtiene al exportar.
-   · No hay botón de guardar. Se guarda solo. El botón que sí existe
-     es «exportar», porque exportar sí es una decisión de una persona.
-   · La ficha de un conjunto se abre por niveles. Pedir los catorce
-     campos de golpe es la forma más segura de que no se rellene
-     ninguno.
+   Índice a la izquierda y un apartado a la vez a la derecha. Lo que se
+   escribe se guarda solo; el único botón de acción es el de exportar.
+   La ficha de un conjunto se abre por niveles.
    ------------------------------------------------------------------ */
 (function () {
   'use strict';
@@ -842,9 +834,8 @@
   }
 
   /* ================= estructura de un conjunto tabular ================
-     Sin editor de diagramas, y es deliberado: colocar cajas con el
-     ratón no añade nada que el plan necesite saber. Se teclea el
-     enlace y el diagrama se dibuja solo. */
+     Se teclean las tablas y sus enlaces; el diagrama se dibuja solo a
+     partir de ellos. */
 
   function panelEstructura(cuerpo, c) {
     if (!Array.isArray(c.x_tablas)) { c.x_tablas = []; }
@@ -1063,10 +1054,8 @@
   }
 
   /* --- leer la cabecera de un CSV --------------------------------------
-     Ahorra teclear sesenta nombres a mano, que es lo que hace que este
-     apartado no se rellene nunca. Se lee solo la primera línea y una
-     de muestra para adivinar el tipo: ningún dato entra en el plan ni
-     sale de este ordenador. */
+     Se leen solo la primera línea, para los nombres, y una de muestra
+     para adivinar el tipo. Ningún dato del fichero entra en el plan. */
 
   function separador(linea) {
     var candidatos = [',', ';', '\t', '|'];
@@ -1164,8 +1153,7 @@
   }
 
   /* --- el diagrama ------------------------------------------------------
-     La disposición la calcula el modelo, para que la pantalla y el PDF
-     no puedan discrepar. Aquí solo se dibuja. */
+     La disposición la calcula el modelo; aquí solo se dibuja. */
 
   var SVGNS = 'http://www.w3.org/2000/svg';
   function svg(tag, atrib) {

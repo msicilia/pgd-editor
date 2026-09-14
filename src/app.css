@@ -1,23 +1,15 @@
 /* ------------------------------------------------------------------
-   Aspecto de aplicación de escritorio, no de página web.
+   Tema de la aplicación, claro y oscuro.
 
-   Lo que sostiene el diseño:
+   Tipografía del sistema, cuerpo de 13 px y controles bajos: se opera,
+   no se lee de corrido. Separadores finos en lugar de tarjetas, y casi
+   ninguna sombra.
 
-   · Tipografía del sistema. Cuerpo de 13 px y líneas apretadas: una
-     aplicación se opera, no se lee de corrido.
-   · Casi ninguna sombra. Separadores finos en vez de tarjetas
-     flotando, y radios pequeños, como los controles del sistema.
-   · Contraste suficiente para leer. El gris más claro que se usa para
-     texto queda por encima de 4.5:1 sobre su fondo, en los dos temas.
-   · **Un tono por grupo del índice.** Es lo único que dice, sin leer
-     nada, en qué parte del documento se está trabajando: la etiqueta
-     del grupo, el filo del apartado seleccionado y la banda que
-     encabeza el panel llevan el mismo color. El resto de la pantalla
-     es gris, y el verde sigue significando «esto se puede pulsar».
-   · **Fondo oscuro y letra blanca en lo que es estructura**: la
-     cabecera del apartado, los rótulos de grupo, las cabeceras de
-     tabla y la de cada caja del diagrama. Separa de un vistazo el
-     armazón del documento de lo que se escribe dentro.
+   Cada grupo del índice tiene un tono, que reaparece en el filo del
+   apartado seleccionado y en la banda que encabeza el panel. Lo que es
+   estructura —esa banda, los rótulos de grupo, las cabeceras de tabla y
+   la de cada caja del diagrama— va sobre fondo oscuro con letra blanca.
+   El verde queda reservado para lo que se puede pulsar.
    ------------------------------------------------------------------ */
 :root{
   --paper:#e6eae8; --lienzo:#ffffff; --barra-f:#f3f6f5;
@@ -266,10 +258,9 @@ button.barra-b .insignia.limpio{background:var(--accent-soft); color:var(--ok)}
 .indice .hijo.anadir:hover{color:var(--accent-ink)}
 
 /* ================= panel ================= */
-/* La columna de lectura la fija el relleno del propio panel, no un
-   margen automático en cada hijo: cualquier regla con `margin` en
-   forma abreviada lo habría anulado sin avisar, y eso es lo que dejaba
-   unos bloques centrados y otros pegados al borde. */
+/* La columna de lectura la fija el relleno del propio panel: un margen
+   automático en cada hijo lo anula cualquier regla con `margin` en
+   forma abreviada. */
 .panel{
   overflow-y:auto; min-height:0; outline:none; background:var(--lienzo);
   padding-top:clamp(14px,2vw,24px);
@@ -383,8 +374,8 @@ button.enlace:hover{background:var(--surface-2)}
   border-radius:0; padding:8px 12px; color:var(--ink)}
 .nivel-cab:hover{background:var(--surface-2)}
 .nivel.abierto .nivel-cab{border-bottom:1px solid var(--line); background:var(--surface-2)}
-/* Los triángulos dibujados con bordes, no con caracteres: ▸ y ▾ salen
-   de un tamaño distinto en cada sistema, y a 9 px parecen un punto. */
+/* Triángulos dibujados con bordes: ▸ y ▾ salen de un tamaño distinto
+   en cada sistema. */
 .nivel .flecha{flex:none; width:0; height:0; margin:0 2px 0 1px;
   border-left:5px solid var(--ink-3);
   border-top:4px solid transparent; border-bottom:4px solid transparent}
