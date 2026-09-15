@@ -247,7 +247,7 @@
   /* Confirmación propia. El diálogo del navegador no se muestra dentro
      de la aplicación de escritorio: confirm() devuelve falso sin
      preguntar nada, y la acción no llegaba a ejecutarse nunca. */
-  function confirmar(anfitrion, mensaje, rotulo, alConfirmar) {
+  function confirmar(anfitrion, mensaje, rotulo, alConfirmar, arriba) {
     var previa = anfitrion.querySelector('.confirmar');
     if (previa) { previa.remove(); }
     var caja = el('div', 'confirmar');
@@ -261,8 +261,17 @@
     no.addEventListener('click', function () { caja.remove(); });
     fila.appendChild(si); fila.appendChild(no);
     caja.appendChild(fila);
-    anfitrion.appendChild(caja);
-    si.focus();
+    /* Una acción de la barra no tiene sitio propio en el panel. Al
+       final quedaría fuera de la vista con varios conjuntos en
+       pantalla, así que se pone arriba y se sube hasta ella. */
+    if (arriba) {
+      caja.classList.add('arriba');
+      anfitrion.insertBefore(caja, anfitrion.firstChild);
+      anfitrion.scrollTop = 0;
+    } else {
+      anfitrion.appendChild(caja);
+    }
+    si.focus({ preventScroll: !!arriba });
   }
 
   function eliminarConjunto(c, anfitrion, alTerminar) {
@@ -306,6 +315,7 @@
   function pintarPanel() {
     var p = $('#panel');
     p.innerHTML = '';
+    if (doc.x_pgd.ejemplo) { p.appendChild(franjaEjemplo()); }
 
     if (vista.conjunto) { return panelConjunto(p); }
 
@@ -1263,6 +1273,56 @@
     return d;
   }
 
+  /* --- el plan de ejemplo ----------------------------------------------
+     Mientras el plan cargado sea el de ejemplo, una franja lo dice en
+     todos los apartados y ofrece las dos salidas: descartarlo, o
+     quedárselo como punto de partida y sustituir los datos. */
+  function franjaEjemplo() {
+    var f = el('div', 'franja-ejemplo');
+    var t = el('p');
+    t.appendChild(el('strong', null, 'Está viendo el plan de ejemplo.'));
+    t.appendChild(document.createTextNode(' Puede consultarlo para ver cómo queda un plan completo, o usarlo como base y sustituir los datos por los de su proyecto.'));
+    f.appendChild(t);
+    var fila = el('div', 'fila-botones');
+    var base = el('button', 'principal', 'Usarlo como base');
+    base.type = 'button';
+    base.addEventListener('click', usarEjemploComoBase);
+    var vacio = el('button', null, 'Empezar un plan vacío');
+    vacio.type = 'button';
+    vacio.addEventListener('click', function () { empezarNuevo(); });
+    fila.appendChild(base); fila.appendChild(vacio);
+    f.appendChild(fila);
+    return f;
+  }
+
+  function usarEjemploComoBase() {
+    delete doc.x_pgd.ejemplo;
+    doc.dmp.created = Modelo.hoy();
+    doc.x_pgd.version = '1.0';
+    doc.x_pgd.fecha_version = Modelo.hoy();
+    doc.x_pgd.estado = 'abierta';
+    doc.x_pgd.minima = '';
+    doc.x_pgd.sello = '';
+    cambiado(true);
+    decir('El ejemplo es ahora su borrador. Sustituya los datos por los de su proyecto; lo que no le sirva, bórrelo.');
+  }
+
+  /* Empezar de cero. Si el plan actual no tiene nada, no pregunta. */
+  function empezarNuevo() {
+    function hazlo() {
+      doc = Modelo.documentoNuevo();
+      irA('portada', null);
+      guardarBorrador();
+      decir('Plan nuevo.');
+    }
+    if (!doc.dmp.title && !doc.dmp.dataset.length && !doc.x_pgd.ejemplo) { return hazlo(); }
+    confirmar($('#panel'),
+      doc.x_pgd.ejemplo
+        ? 'Se descartará el plan de ejemplo y se empezará uno vacío.'
+        : 'Se descartará el plan que hay ahora y se empezará uno vacío. Si quiere conservarlo, expórtelo antes.',
+      'Empezar de nuevo', hazlo, true);
+  }
+
   /* --- revisión y exportación ------------------------------------------ */
   function panelRevision(p) {
     var leg = el('div', 'leyenda');
@@ -1306,7 +1366,7 @@
 
     var acc = el('div', 'acciones-panel');
     acc.appendChild(el('h3', null, 'Exportar'));
-    acc.appendChild(el('p', 'menor', 'El PDF sigue la plantilla de plan de gestión de datos de Horizon Europe, con sus indicaciones literales encima de cada respuesta. Es un documento normal y lleva el plan dentro: para seguir otro día basta con arrastrarlo sobre esta ventana.'));
+    acc.appendChild(el('p', 'menor', 'El PDF sigue la plantilla de plan de gestión de datos de Horizon Europe, con sus indicaciones traducidas al castellano encima de cada respuesta. Es un documento normal y lleva el plan dentro: para seguir otro día basta con arrastrarlo sobre esta ventana.'));
 
     /* La versión es una decisión de quien exporta, así que se toma
        aquí y no al guardar: si el cambio obliga a avisar a alguien,
@@ -1381,15 +1441,7 @@
     var bn = el('button', 'discreto', 'Empezar un plan nuevo');
     bn.type = 'button';
     bn.style.marginTop = '12px';
-    bn.addEventListener('click', function () {
-      confirmar(acc, 'Se descartará el plan que hay ahora y se empezará uno vacío.',
-        'Empezar de nuevo', function () {
-          doc = Modelo.documentoNuevo();
-          irA('portada', null);
-          guardarBorrador();
-          decir('Plan nuevo.');
-        });
-    });
+    bn.addEventListener('click', function () { empezarNuevo(); });
     acc.appendChild(bn);
     p.appendChild(acc);
   }
@@ -1684,14 +1736,17 @@
     $('#b-ejemplo').addEventListener('click', function () {
       function cargar() {
         doc = Modelo.desdeJSON(JSON.stringify(window.EJEMPLO));
+        doc.x_pgd.ejemplo = true;
         irA('conjuntos', null);
         guardarBorrador();
         decir('Ejemplo cargado: PREVIA, con sus siete conjuntos de datos.');
       }
+      if (doc.x_pgd.ejemplo) { return irA('conjuntos', null); }
       if (!doc.dmp.title && !doc.dmp.dataset.length) { return cargar(); }
-      confirmar($('#panel'), 'Se descartará el plan que hay ahora y se cargará el plan de ejemplo.',
-        'Cargar el ejemplo', cargar);
+      confirmar($('#panel'), 'Se descartará el plan que hay ahora y se cargará el plan de ejemplo. Si quiere conservarlo, expórtelo antes.',
+        'Cargar el ejemplo', cargar, true);
     });
+    $('#b-nuevo').addEventListener('click', function () { empezarNuevo(); });
 
     $('#b-abrir').addEventListener('click', function () { $('#fichero').click(); });
     $('#b-exportar').addEventListener('click', function (e) { e.stopPropagation(); menuExportar(); });

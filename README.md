@@ -39,7 +39,13 @@ empezar, a medias o completo.
 existe es *Exportar*, porque exportar es una decisión.
 
 **El botón Ejemplo** carga un plan completo de un estudio ficticio. Es la forma
-más rápida de ver cómo queda un plan terminado y cómo sale el PDF.
+más rápida de ver cómo queda un plan terminado y cómo sale el PDF. Mientras el
+ejemplo está cargado, una franja lo recuerda en cada apartado y ofrece dos
+salidas: **usarlo como base** y sustituir los datos por los del proyecto, o
+**empezar un plan vacío**.
+
+**El botón Nuevo** empieza un plan vacío. Si hay algo escrito, pide
+confirmación antes de descartarlo.
 
 **Revisión** enumera lo que falta y lo que no encaja: un conjunto declarado
 abierto que todavía contiene datos personales, un conjunto de origen
@@ -72,6 +78,10 @@ subir el número, para que no circulen dos documentos distintos con la misma
 versión.
 
 ## Para qué sirve el PDF
+
+Sigue la estructura de la plantilla de plan de gestión de datos de Horizon
+Europe, con las indicaciones de la Comisión traducidas al castellano encima de
+cada respuesta, de modo que todo el documento está en un solo idioma.
 
 Es un documento normal, que cualquiera puede leer e imprimir, y a la vez lleva
 el plan dentro en formato **RDA DMP Common Standard**. Al volver a abrirlo, la

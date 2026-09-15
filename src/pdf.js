@@ -194,9 +194,8 @@
         filas.forEach(function (f) { fila(f, false); });
         api.espacio(6);
       },
-      /* Las preguntas de la plantilla europea, tal como figuran en el
-         formulario. Van en inglés a propósito: son la cadena que hay
-         que buscar en el documento de la Comisión al volcar. */
+      /* Las indicaciones de la plantilla europea, en cursiva sobre cada
+         respuesta. */
       pregunta: function (texto) {
         api.espacio(7);
         api.sitio(26);
@@ -363,7 +362,7 @@
     var muestrasHay = x.x_muestras_hay === 'si';
 
     return {
-      /* --- Data Summary ------------------------------------------------
+      /* --- Resumen de los datos ------------------------------------------------
          El orden es el del formulario de la Comisión, que empieza por la
          reutilización y no por los formatos. */
       ds1: function () {
@@ -389,14 +388,14 @@
       }),
       ds6: porConjunto('x_utilidad'),
 
-      /* --- Making data findable --------------------------------------- */
-      f1: fijo('Sí. El identificador permanente lo asigna el repositorio en el momento del depósito; el repositorio previsto de cada conjunto figura bajo «Making data accessible».'),
+      /* --- Datos localizables --------------------------------------- */
+      f1: fijo('Sí. El identificador permanente lo asigna el repositorio en el momento del depósito; el repositorio previsto de cada conjunto figura en «Datos accesibles».'),
       f2: texto(x.x_esquema),
       f3: tablaDe(['Id', 'Conjunto', 'Términos de búsqueda'],
         [function (c) { return (c.keyword || []).join(', '); }], [8, 34, 58]),
       f4: fijo('Sí. Los metadatos quedan en el catálogo del repositorio elegido, que los expone para su recolección e indización por terceros.'),
 
-      /* --- Making data accessible ------------------------------------- */
+      /* --- Datos accesibles ------------------------------------- */
       ac1: porConjunto('x_repositorio', '— sin repositorio decidido para ningún conjunto —'),
       ac2: texto(x.x_gestiones),
       ac3: function () {
@@ -440,7 +439,7 @@
       },
       ac12: texto(x.x_software_lectura),
 
-      /* --- Making data interoperable ---------------------------------- */
+      /* --- Datos interoperables ---------------------------------- */
       io1: porConjunto(function (c) {
         return [c.x_formato, c.x_vocabularios].filter(Boolean).join('. ');
       }),
@@ -458,7 +457,7 @@
         }
       },
 
-      /* --- Increase data re-use --------------------------------------- */
+      /* --- Reutilización de los datos --------------------------------------- */
       ru1: function () {
         porConjunto('x_diccionario')();
         estructuraEC(a, doc);
@@ -467,9 +466,9 @@
       ru3: porConjunto('x_utilidad'),
       ru4: texto(x.x_nombrado),
       ru5: porConjunto('data_quality_assurance'),
-      ru6: fijo('Los resultados distintos de los datos figuran bajo «Other research outputs»; la asignación de recursos, bajo «Allocation of resources»; la seguridad, bajo «Data security»; y las cuestiones éticas y legales, bajo «Ethics».'),
+      ru6: fijo('Los resultados distintos de los datos figuran en «Otros resultados de investigación»; la asignación de recursos, en «Asignación de recursos»; la seguridad, en «Seguridad de los datos»; y las cuestiones éticas y legales, en «Aspectos éticos».'),
 
-      /* --- Other research outputs ------------------------------------- */
+      /* --- Otros resultados de investigación ------------------------------------- */
       or1: campos([
         ['Software y código de análisis', x.x_software],
         ['Protocolos y procedimientos', x.x_protocolos],
@@ -485,7 +484,7 @@
         ['Destino de las muestras al terminar', muestrasHay ? x.x_muestras_destino : 'No procede.']
       ]),
 
-      /* --- Allocation of resources ------------------------------------ */
+      /* --- Asignación de recursos ------------------------------------ */
       re1: texto(x.x_coste),
       re2: texto(x.x_cobertura),
       re3: function () {
@@ -504,7 +503,7 @@
           [x.x_bloqueo, x.x_borrado].filter(Boolean).join(' '));
       },
 
-      /* --- Data security ---------------------------------------------- */
+      /* --- Seguridad de los datos ---------------------------------------------- */
       se1: function () {
         tablaDe(['Id', 'Conjunto', 'Dónde reside', 'Administra'],
           [function (c) { return c.x_emplazamiento; }, function (c) { return c.x_administra; }],
@@ -515,7 +514,7 @@
       },
       se2: porConjunto('x_repositorio', '— sin repositorio decidido para ningún conjunto —'),
 
-      /* --- Ethics ------------------------------------------------------ */
+      /* --- Aspectos éticos ------------------------------------------------------ */
       et1: function () {
         a.campo('Comité de ética y referencia del dictamen', x.x_comite);
         if (hay) {
@@ -541,10 +540,10 @@
         porConjunto('x_alcance', '— sin declarar el alcance del permiso por conjunto —')();
       },
 
-      /* --- Other issues ------------------------------------------------ */
+      /* --- Otras cuestiones ------------------------------------------------ */
       oi1: texto(x.institucion
         ? 'Se siguen los procedimientos de gestión de datos de ' + x.institucion +
-          (String(x.x_esquema || '').trim() ? ', y el esquema de metadatos indicado bajo «Making data findable».' : '.')
+          (String(x.x_esquema || '').trim() ? ', y el esquema de metadatos indicado en «Datos localizables».' : '.')
         : '', '— falta la institución responsable, que es de quien dependen esos procedimientos —')
     };
   }
@@ -555,7 +554,7 @@
     var resp = respuestasEC(a, doc);
 
     a.nuevaPagina();
-    a.escribir('DATA MANAGEMENT PLAN', { negrita: true, tam: 9.5, color: a.ACENTO });
+    a.escribir('PLAN DE GESTIÓN DE DATOS', { negrita: true, tam: 9.5, color: a.ACENTO });
     a.espacio(10);
     a.escribir(d.title || 'Sin título', { negrita: true, tam: 21 });
     a.espacio(6);
@@ -567,17 +566,20 @@
       .filter(Boolean).join('  ·  '), { tam: 10, color: a.SUAVE });
     a.espacio(14);
     a.regla();
-    a.nota('Documento volcado a la plantilla de plan de gestión de datos de Horizon Europe. En cursiva y en inglés figuran las indicaciones tal como aparecen en el formulario de la Comisión, tomadas de su documento original, para poder localizarlas al trasladar las respuestas. Los apartados se citan por su título y no por su número: la Comisión los renumera al revisar la plantilla, que además es recomendada y no obligatoria.');
+    a.nota('Plan organizado según la plantilla de plan de gestión de datos de Horizon Europe. En cursiva figuran las indicaciones de la plantilla de la Comisión Europea, traducidas al castellano; el original, en inglés, se publica en el Portal de Financiación y Licitaciones. Los apartados se citan por su título y no por su número, porque la Comisión los renumera al revisar la plantilla, que además es recomendada y no obligatoria.');
 
     var seccionPuesta = null;
     bloques.forEach(function (b) {
-      if (b.seccion !== seccionPuesta && !b.sub) { a.seccion(b.seccion); seccionPuesta = b.seccion; }
+      /* se imprime la traducción; el original en inglés queda en
+         preguntas-ec.js como referencia */
+      var titulo = b.seccion_es || b.seccion;
+      if (b.seccion !== seccionPuesta && !b.sub) { a.seccion(titulo); seccionPuesta = b.seccion; }
       else if (b.sub) {
-        if (b.seccion !== seccionPuesta) { a.seccion(b.seccion); seccionPuesta = b.seccion; }
-        a.sub(b.sub);
+        if (b.seccion !== seccionPuesta) { a.seccion(titulo); seccionPuesta = b.seccion; }
+        a.sub(b.sub_es || b.sub);
       }
       b.preguntas.forEach(function (q) {
-        a.pregunta(q.t);
+        a.pregunta(q.t_es || q.t);
         var f = resp[q.id];
         if (f) { f(); }
         else { a.pendiente('Esta indicación del formulario no tiene respuesta en el editor.'); }
